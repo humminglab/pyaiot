@@ -74,8 +74,8 @@ def run(arguments=[]):
         logger.error(exc)
         return
 
-    if not tornado.platform.asyncio.AsyncIOMainLoop().initialized():
-        tornado.platform.asyncio.AsyncIOMainLoop().install()
+    # if not tornado.platform.asyncio.AsyncIOMainLoop().initialized():
+    #     tornado.platform.asyncio.AsyncIOMainLoop().install()
 
     start_application(CoapGateway(keys, options=options),
                       port=options.coap_port, close_client=True)
