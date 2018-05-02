@@ -1,10 +1,10 @@
 
 # Define default variables
 STATIC_PATH       ?= ./pyaiot/dashboard/static/
-BROKER_PORT       ?= 80
-BROKER_HOST       ?= riot-demo.inria.fr
+BROKER_PORT       ?= 8082
+BROKER_HOST       ?= localhsot
 DASHBOARD_PORT    ?= 8080
-DASHBOARD_TITLE   ?= "Local RIOT Demo Dashboard"
+DASHBOARD_TITLE   ?= "USB Charger Dashboard"
 DASHBOARD_LOGO    ?= /static/assets/logo-riot.png
 DASHBOARD_FAVICON ?= /static/assets/favicon192.png
 CAMERA_URL ?= http://riot-demo.inria.fr/demo-cam/?action=stream
