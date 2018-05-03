@@ -45,7 +45,6 @@ logger = logging.getLogger("pyaiot.dashboard")
 
 
 class DashboardHandler(web.RequestHandler):
-    @tornado.web.asynchronous
     def get(self, path=None):
         self.render("dashboard.html",
                     wsproto="wss" if options.broker_ssl else "ws",

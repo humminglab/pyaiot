@@ -31,7 +31,8 @@
 
 import uuid
 import logging
-from tornado import gen, web, websocket
+import asyncio
+from tornado import web, websocket
 
 from pyaiot.common.auth import verify_auth_token
 from pyaiot.common.messaging import Message
@@ -47,19 +48,17 @@ class BrokerWebsocketGatewayHandler(websocket.WebSocketHandler):
         """Allow connections from anywhere."""
         return True
 
-    @gen.coroutine
-    def open(self):
+    async def open(self):
         """Discover nodes on each opened connection."""
         self.set_nodelay(True)
         logger.info("New gateway websocket opened")
 
         # Wait 2 seconds to get the gateway authentication token.
-        yield gen.sleep(2)
+        await asyncio.sleep(2)
         if not self.authentified:
             self.close()
 
-    @gen.coroutine
-    def on_message(self, raw):
+    async def on_message(self, raw):
         """Triggered when a message is received from the broker child."""
         if not self.authentified:
             if verify_auth_token(raw, self.application.keys):
@@ -98,8 +97,7 @@ class BrokerWebsocketClientHandler(websocket.WebSocketHandler):
         self.set_nodelay(True)
         logger.info("New client connection opened '{}'".format(self.uid))
 
-    @gen.coroutine
-    def on_message(self, raw):
+    async def on_message(self, raw):
         """Triggered when a message is received from the web client."""
         message, reason = Message.check_message(raw)
         if message is not None:
@@ -165,8 +163,7 @@ class Broker(web.Application):
         for gw in self.gateways:
             gw.write_message(Message.serialize(message))
 
-    @gen.coroutine
-    def on_gateway_message(self, ws, message):
+    async def on_gateway_message(self, ws, message):
         """Handle a message received from a gateway.
 
         This method redirect messages from gateways to the right destinations:
