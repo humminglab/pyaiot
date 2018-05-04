@@ -1,3 +1,7 @@
+## Overview
+
+This project is based on [Pyaiot](https://github.com/pyaiot), and modified for internal project.
+
 ## Pyaiot, connecting nodes to the web
 
 [![Build Status](https://travis-ci.org/pyaiot/pyaiot.svg?branch=master)](https://travis-ci.org/pyaiot/pyaiot)
