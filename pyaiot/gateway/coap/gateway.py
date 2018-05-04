@@ -82,7 +82,7 @@ class CoapAliveResource(resource.Resource):
         super(CoapAliveResource, self).__init__()
         self._gateway = gateway
 
-    async def render_post(self, request):
+    def render_post(self, request):
         """Triggered when a node post an alive check to the gateway."""
         payload = request.payload.decode('utf8')
         try:
@@ -142,7 +142,7 @@ class CoapGateway(GatewayBase):
                                CoapServerResource(self))
         root_coap.add_resource(('alive', ),
                                CoapAliveResource(self))
-        asyncio.async(
+        asyncio.ensure_future(
             Context.create_server_context(root_coap, bind=('::', self.port)))
 
         # Start the periodic node cleanup task
@@ -150,7 +150,7 @@ class CoapGateway(GatewayBase):
 
         logger.info('CoAP gateway application started')
 
-    async def discover_node(self, node):
+    async def _discover_node(self, node):
         """Discover resources available on a node."""
         address = node.resources['ip']
         coap_node_url = 'coap://[{}]'.format(address)
@@ -182,7 +182,10 @@ class CoapGateway(GatewayBase):
         logger.debug("CoAP node resources '{}' sent to broker"
                      .format(endpoints))
 
-    async def update_node_resource(self, node, endpoint, payload):
+    def discover_node(self, node):
+        asyncio.ensure_future(self._discover_node(node))
+
+    async def _update_node_resource(self, node, endpoint, payload):
         """"""
         address = node.resources['ip']
         logger.debug("Updating CoAP node '{}' resource '{}'"
@@ -193,6 +196,9 @@ class CoapGateway(GatewayBase):
             payload=payload.encode('ascii'))
         if code == Code.CHANGED:
             self.forward_data_from_node(node, endpoint, payload)
+
+    def update_node_resource(self, node, endpoint, payload):
+        asyncio.ensure_future(self._update_node_resource(node, endpoint, payload))
 
     def handle_coap_post(self, address, endpoint, value):
         """Handle CoAP post message sent from coap node."""

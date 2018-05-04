@@ -51,14 +51,14 @@ class GatewayBaseMixin():
         """Check if the node uid is already present."""
         return uid in self.nodes
 
-    async def add_node(self, node):
+    def add_node(self, node):
         """Add a new node to the list of nodes and notify the broker."""
         node.set_resource_value('protocol', self.PROTOCOL)
         self.nodes.update({node.uid: node})
         self.send_to_broker(Message.new_node(node.uid))
         for res, value in node.resources.items():
             self.send_to_broker(Message.update_node(node.uid, res, value))
-        await self.discover_node(node)
+        self.discover_node(node)
 
     def reset_node(self, node, default_resources={}):
         """Reset a node: clear the current resource and reinitialize them."""
@@ -79,7 +79,7 @@ class GatewayBaseMixin():
         """Return the node matching the given uid."""
         return self.nodes[uid]
 
-    async def forward_data_from_node(self, node, resource, value):
+    def forward_data_from_node(self, node, resource, value):
         """Send data received from a node to the broker via the gateway."""
         logger.debug("Sending data received from node '{}': '{}', '{}'."
                      .format(node, resource, value))
@@ -125,7 +125,7 @@ class GatewayBaseMixin():
 
             await asyncio.sleep(3)
 
-    async def send_to_broker(self, message):
+    def send_to_broker(self, message):
         """Send a string message to the parent broker."""
         if self.broker is not None:
             logger.debug("Sending message '{}' to broker.".format(message))

@@ -72,7 +72,7 @@ class BrokerWebsocketGatewayHandler(websocket.WebSocketHandler):
         else:
             message, reason = Message.check_message(raw)
             if message is not None:
-                self.application.on_gateway_message(self, message)
+                await self.application.on_gateway_message(self, message)
             else:
                 logger.debug("Invalid message, closing websocket")
                 self.close(code=1003, reason="{}.".format(reason))
