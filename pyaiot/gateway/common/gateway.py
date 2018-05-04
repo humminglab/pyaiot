@@ -123,7 +123,7 @@ class GatewayBaseMixin():
                         break
                     self.on_broker_message(message)
 
-            asyncio.sleep(3)
+            await asyncio.sleep(3)
 
     async def send_to_broker(self, message):
         """Send a string message to the parent broker."""
