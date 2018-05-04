@@ -35,17 +35,15 @@ import uuid
 import asyncio
 import json
 
-from tornado import gen
 from tornado.websocket import websocket_connect
-from tornado.ioloop import PeriodicCallback
-
-from pyaiot.common.messaging import Message as Msg
 from pyaiot.gateway.common import GatewayBase, Node
 
-if __name__ == '__main__':
-    from device import Device
-else:
+try:
+    from .powernode import PowerNode
     from .device import Device
+except:
+    from powernode import PowerNode
+    from device import Device
 
 
 logger = logging.getLogger("pyaiot.gw.manager")

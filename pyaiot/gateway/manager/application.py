@@ -36,10 +36,10 @@ from tornado.options import define, options
 from pyaiot.common.auth import check_key_file
 from pyaiot.common.helpers import start_application, parse_command_line
 
-if __name__ == '__main__':
-    from manager import Manager
-else:
+try:
     from .manager import Manager
+except:
+    from manager import Manager
 
 logger = logging.getLogger("pyaiot.gw.ws")
 

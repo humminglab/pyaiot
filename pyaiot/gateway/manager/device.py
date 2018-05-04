@@ -31,7 +31,10 @@ import logging
 
 logger = logging.getLogger("pyaiot.gw.device")
 
-from database import Database
+try:
+    from .database import Database
+except:
+    from database import Database
 
 class Device():
     def __init__(self, options):

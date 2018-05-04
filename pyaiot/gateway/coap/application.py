@@ -37,10 +37,10 @@ from tornado.options import define, options
 from pyaiot.common.auth import check_key_file
 from pyaiot.common.helpers import start_application, parse_command_line
 
-if __name__ == '__main__':
-    from gateway import CoapGateway, MAX_TIME, COAP_PORT
-else:
+try:
     from .gateway import CoapGateway, MAX_TIME, COAP_PORT
+except:
+    from gateway import CoapGateway, MAX_TIME, COAP_PORT
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)14s - '
