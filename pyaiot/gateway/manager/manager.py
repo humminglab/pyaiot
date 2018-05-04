@@ -46,6 +46,8 @@ except:
     from device import Device
 
 
+POWER_MONITOR_INTERVAL = 3.0
+
 logger = logging.getLogger("pyaiot.gw.manager")
 
 class Manager(GatewayBase):
@@ -54,18 +56,54 @@ class Manager(GatewayBase):
     PROTOCOL = 'Manager'
 
     def __init__(self, keys, options):
+        super().__init__(keys, options)
+
+        self.options = options
         if options.debug:
             logger.setLevel(logging.DEBUG)
 
         self.device = Device(options)
+        self.node = Node(str(uuid.uuid4()))
+        self.power_node = None
+        self.power_data = None
+        self.power_uuid = str(uuid.uuid4())
         self.websock = None
+        asyncio.ensure_future(self.coroutine_init())
 
-        super().__init__(keys, options)
+    async def coroutine_init(self):
+        asyncio.ensure_future(self.create_client_connection(
+            "ws://{}:{}/ws".format(self.options.broker_host, self.options.broker_port)))
 
-        self.create_client_connection(
-            "ws://{}:{}/ws".format(options.broker_host, options.broker_port))
+        # wait for connection with broker
+        while True:
+            if self.broker:
+                break
+            await asyncio.sleep(0.1)
 
+        self.power_node = PowerNode()
+        await self.power_node.wait_initialized()
+
+        # power on
+        await self.power_node.set([1,1,1,1,1])
+
+        self.power_data = await self.power_node.read()
+        self.new_power_report()
         logger.info('Manager application started')
+        await self.process_power_node()
+
+    def new_power_report(self):
+        self.add_node(self.node)
+        for key, value in self.power_data.items():
+            self.forward_data_from_node(self.node, key, value)
+
+    async def process_power_node(self):
+        while True:
+            old_data = self.power_data
+            self.power_data = await self.power_node.read()
+            for key, value in self.power_data.items():
+                if value != old_data[key]:
+                    self.forward_data_from_node(self.node, key, value)
+            await asyncio.sleep(POWER_MONITOR_INTERVAL)
 
     def on_client_message(self, message):
         """Handle a message received from gateways."""
@@ -104,8 +142,8 @@ class Manager(GatewayBase):
 
             await asyncio.sleep(3)
 
-    async def discover_node(self, node):
+    def discover_node(self, node):
         logger.debug("discover_node '{}'".format(node))
 
-    async def update_node_resource(self, node, endpoint, payload):
+    def update_node_resource(self, node, endpoint, payload):
         logger.debug("update_node_resource '{}'".format(node))
