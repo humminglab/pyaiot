@@ -32,7 +32,6 @@
 import logging
 import asyncio
 import serial_asyncio
-import time
 
 logger = logging.getLogger("pyaiot.gw.powernode")
 
@@ -49,7 +48,6 @@ class UartNode(asyncio.Protocol):
 
     async def command(self, cmd_line):
         timeout = 3.0
-        start_time = time.time()
         buf = b''
         while not self.queue.empty():
             await self.queue.get()
