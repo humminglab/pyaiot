@@ -177,8 +177,8 @@ class GatewayBase(web.Application, GatewayBaseMixin, metaclass=ABCMeta):
         settings = {'debug': True}
 
         # Create connection to broker
-        self.create_broker_connection(
-            "ws://{}:{}/gw".format(options.broker_host, options.broker_port))
+        asyncio.ensure_future(self.create_broker_connection(
+            "ws://{}:{}/gw".format(options.broker_host, options.broker_port)))
 
         super().__init__(handlers, **settings)
         logger.debug('Base Gateway application started')
