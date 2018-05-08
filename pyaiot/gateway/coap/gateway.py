@@ -92,7 +92,8 @@ class CoapAliveResource(resource.Resource):
         logger.debug("CoAP Alive POST received from {}".format(remote))
 
         # Let the controller handle this message
-        self._gateway.handle_coap_check(remote, reset=(payload == 'reset'))
+        data = payload.split(',')
+        self._gateway.handle_coap_check(remote, id=data[0], reset=(len(data) == 2 and data[1] == 'reset'))
 
         # Kindly reply the message has been processed
         return Message(code=CHANGED,
@@ -208,12 +209,12 @@ class CoapGateway(GatewayBase):
         node = self.get_node(self.node_mapping[address])
         self.forward_data_from_node(node, endpoint, value)
 
-    def handle_coap_check(self, address, reset=False):
+    def handle_coap_check(self, address, id, reset=False):
         """Handle check message received from coap node."""
         if address not in self.node_mapping:
             # This is a totally new node: create uid, initialized cached node
             # send 'new' node notification, 'update' notification.
-            node = Node(str(uuid.uuid4()), ip=address)
+            node = Node(id, ip=address)
             self.node_mapping.update({address: node.uid})
             self.add_node(node)
         elif reset:
