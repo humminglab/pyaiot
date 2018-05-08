@@ -63,10 +63,9 @@ class Manager(GatewayBase):
             logger.setLevel(logging.DEBUG)
 
         self.device = Device(options)
-        self.node = Node(str(uuid.uuid4()))
-        self.power_node = None
+        self.power_node = Node(str(uuid.uuid4()))
+        self.power_device = None
         self.power_data = None
-        self.power_uuid = str(uuid.uuid4())
         self.websock = None
         asyncio.ensure_future(self.coroutine_init())
 
@@ -80,29 +79,29 @@ class Manager(GatewayBase):
                 break
             await asyncio.sleep(0.1)
 
-        self.power_node = PowerNode()
-        await self.power_node.wait_initialized()
+        self.power_device = PowerNode()
+        await self.power_device.wait_initialized()
 
         # power on
-        await self.power_node.set([1,1,1,1,1])
+        await self.power_device.set([1, 1, 1, 1, 1])
 
-        self.power_data = await self.power_node.read()
+        self.power_data = await self.power_device.read()
         self.new_power_report()
         logger.info('Manager application started')
         await self.process_power_node()
 
     def new_power_report(self):
-        self.add_node(self.node)
+        self.add_node(self.power_node)
         for key, value in self.power_data.items():
-            self.forward_data_from_node(self.node, key, value)
+            self.forward_data_from_node(self.power_node, key, value)
 
     async def process_power_node(self):
         while True:
             old_data = self.power_data
-            self.power_data = await self.power_node.read()
+            self.power_data = await self.power_device.read()
             for key, value in self.power_data.items():
                 if value != old_data[key]:
-                    self.forward_data_from_node(self.node, key, value)
+                    self.forward_data_from_node(self.power_node, key, value)
             await asyncio.sleep(POWER_MONITOR_INTERVAL)
 
     def on_client_message(self, message):
