@@ -110,6 +110,10 @@ class Manager(GatewayBase):
                      .format(message))
         message = json.loads(message)
 
+        # skip power node
+        if message['uid'] == self.power_node.uid:
+            return
+
         if message['type'] == 'new':
             self.device.device_new(message)
         elif message['type'] == 'out':
