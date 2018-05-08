@@ -157,7 +157,7 @@ if (theme == 'dark') {
                             <i class="fa fa-lg fa-battery-2"></i>
                         </span>
                     </template>
-                    <span v-else class="text-disabled">
+                    <span v-else-if="node.active" class="text-disabled">
                             <i class="fa fa-lg fa-battery-0"></i>
                     </span>
                 </th>
