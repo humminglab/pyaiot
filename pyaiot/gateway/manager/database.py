@@ -74,11 +74,11 @@ class Database():
 
     def set_device(self, dev):
         """Update of insert device information"""
-        self.cursor.execute('SELECT id FROM devices WHERE device_id == ?', dev['device_id'])
+        self.cursor.execute('SELECT id FROM devices WHERE device_id == ?', (dev['device_id'],))
         entry = self.cursor.fetchone()
         if entry:
             self.cursor.execute('UPDATE devices SET seat_number=?, group_number=? WHERE id=?',
-                                dev['seat_number'], dev['group_number'], entry[0])
+                                (dev['seat_number'], dev['group_number'], entry[0]))
         else:
             self.cursor.execute('INSERT INTO devices (device_id, seat_number, group_number) VALUES (?, ?, ?)',
                                 (dev['device_id'], dev['seat_number'], dev['group_number']))
@@ -86,13 +86,13 @@ class Database():
 
     def delete_device(self, device_id):
         """Delete device ID"""
-        self.cursor.execute('SELECT id FROM devices WHERE device_id == ?', dev['device_id'])
+        self.cursor.execute('SELECT id FROM devices WHERE device_id == ?', (device_id,))
         entry = self.cursor.fetchone()
         if not entry:
             return
 
-        self.cursor.execute('DELETE FROM devices WHERE id == ?', entry[0])
-        self.cursor.execute('DELETE FROM port_logs WHERE device == ?', entry[0])
+        self.cursor.execute('DELETE FROM devices WHERE id == ?', (entry[0],))
+        self.cursor.execute('DELETE FROM port_logs WHERE device == ?', (entry[0],))
         self.conn.commit()
 
     def insert_log(self, log):
@@ -119,26 +119,35 @@ class Database():
     def insert_port_log(self, log, db_id=None):
         """Insert port log int port_logs"""
         if db_id is None:
-            self.cursor.execute('SELECT id FROM devices WHERE device_id == ?', log['device_id'])
+            self.cursor.execute('SELECT id FROM devices WHERE device_id == ?', (log['device_id'],))
             result = self.cursor.fetchone()
             if not result:
                 return
             db_id = result[0]
 
         self.cursor.execute('INSERT INTO port_logs (timestamp, device, key, value) VALUES (?,?,?,?)',
-                            (
-                                log['timestamp'] if 'timestamp' in log else datetime.now(),
-                                db_id,
-                                log['key'], log['value']))
+                            (log['timestamp'] if 'timestamp' in log else datetime.now(),
+                             db_id,log['key'], log['value']))
 
     def throw_old_logs(self, before):
         """Remove log from database until 'before'"""
-        self.cursor.execute('DELETE FROM logs WHERE timestamp < ?', before)
+        self.cursor.execute('DELETE FROM logs WHERE timestamp < ?', (before,))
         self.conn.commit()
 
     def throw_old_port_logs(self, before):
         """Remvoe port log from database until 'before' """
-        self.cursor.execute('DELETE FROM device_logs WHERE timestamp < ?', before)
+        self.cursor.execute('DELETE FROM device_logs WHERE timestamp < ?', (before,))
+        self.conn.commit()
+
+    def get_conf(self, name, default):
+        self.cursor.execute('SELECT value FROM configs WHERE name == ?', (name,))
+        result = self.cursor.fetchone()
+        return result[0] if result else default
+
+    def set_conf(self, name, value):
+        self.cursor.execute('UPDATE configs SET value=? WHERE name=?', (value, name))
+        if self.cursor.rowcount < 1:
+            self.cursor.execute('INSERT INTO configs (name, value) VALUES (?, ?)', (name, value))
         self.conn.commit()
 
     def check_database(self):
@@ -184,6 +193,11 @@ class Database():
                                 'timestamp NUMERIC NOT NULL,'
                                 'device INTEGER NOT NULL,'
                                 'key TEXT NOT NULL,'
+                                'value TEXT)')
+
+        if ('configs', ) not in entries:
+            self.cursor.execute('CREATE TABLE configs ('
+                                'name TEXT NOT NULL UNIQUE,'
                                 'value TEXT)')
 
         self.conn.commit()
