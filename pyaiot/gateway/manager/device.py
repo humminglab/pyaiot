@@ -47,33 +47,31 @@ class Device():
             n.update({'data': {}, 'active': False})
             n['data'] = {}
 
-        self.uids = {}
+        self.uids = {node['device_id']: node for node in self.nodes}
         self.unkown_uids_data = {}
 
     def is_registered_device(self, id):
-        for n in self.nodes:
-            if n['device_id'] == id:
-                return n
-        return None
+        return self.uids[id] if id in self.uids else None
 
     def device_new(self, msg):
         """Add to new device"""
         uid = msg['uid']
+        data = {'active':True}
         if uid in self.uids:
-            self.uids[uid].update({'active':True})
+            self.uids[uid].update(data)
             return
         if uid in self.unkown_uids_data:
+            self.unkown_uids_data[uid].update(data)
             return
 
         logger.debug('Create new device:{} in uids_unknown'.format(msg['uid']))
-        self.unkown_uids_data.update({uid: {}})
+        self.unkown_uids_data.update({uid: data})
 
     def device_out(self, msg):
         uid = msg['uid']
         if uid in self.uids:
             logger.debug('Delete device:{} in udis'.format(uid))
             self.uids[uid].update({'active':False})
-            del(self.uids[uid])
         elif uid in self.unkown_uids_data[uid]:
             logger.debug('Delete device:{} in udis_unkonwn'.format(uid))
             del(self.unkown_uids_data[uid])
@@ -91,10 +89,3 @@ class Device():
             self.uids[uid]['data'].update({msg['endpoint']:msg['data']})
         elif uid in self.unkown_uids_data:
             self.unkown_uids_data[uid].update({msg['endpoint']:msg['data']})
-            if msg['endpoint'] == 'id':
-                node = self.is_registered_device(msg['data'])
-                if node:
-                    node.update({'active': True})
-                    node['data'].update(self.unkown_uids_data[uid])
-                    del(self.unkown_uids_data[uid])
-                    self.uids.update({uid: node})
