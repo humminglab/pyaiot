@@ -76,7 +76,7 @@ class Manager(GatewayBase):
 
         # wait for connection with broker
         while True:
-            if self.broker:
+            if self.broker and self.websock:
                 break
             await asyncio.sleep(0.1)
 
