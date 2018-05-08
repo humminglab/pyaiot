@@ -50,6 +50,12 @@ class Device():
         self.uids = {node['device_id']: node for node in self.nodes}
         self.unkown_uids_data = {}
 
+    def get_seat_info(self):
+        data = []
+        for node in self.nodes:
+            data.append(dict(uid=node['device_id'], seat_number=node['seat_number'], group_number=node['group_number']))
+        return data
+
     def is_registered_device(self, id):
         return self.uids[id] if id in self.uids else None
 

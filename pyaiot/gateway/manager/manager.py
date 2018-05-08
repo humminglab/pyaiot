@@ -37,6 +37,7 @@ import json
 
 from tornado.websocket import websocket_connect
 from pyaiot.gateway.common import GatewayBase, Node
+from pyaiot.common.messaging import Message
 
 try:
     from .powernode import PowerNode
@@ -105,8 +106,8 @@ class Manager(GatewayBase):
             await asyncio.sleep(POWER_MONITOR_INTERVAL)
 
     def on_client_message(self, message):
-        """Handle a message received from gateways."""
-        logger.debug("Handling message '{}' received from broker."
+        """Handle a message received from gateways to client."""
+        logger.debug("Handling message '{}' received from gateway."
                      .format(message))
         message = json.loads(message)
 
@@ -125,6 +126,16 @@ class Manager(GatewayBase):
         else:
             logger.debug("Invalid data received from broker '{}'."
                          .format(message['data']))
+
+    def on_broker_message(self, message):
+        """Handle a message received from client to gateways"""
+        super(Manager, self).on_broker_message(message)
+
+        message = json.loads(message)
+        if message['type'] == "new":
+            data = self.device.get_seat_info()
+            logger.debug("Notify seat info to new client '{}'.".format(data))
+            self.send_to_broker(Message.update_node(self.power_node.uid, "seat_info", data))
 
     async def create_client_connection(self, url):
         """Create an asynchronous connection to the broker."""
