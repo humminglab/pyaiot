@@ -130,10 +130,10 @@ class Manager(GatewayBase):
     def on_broker_message(self, message):
         """Handle a message received from client to gateways"""
         super(Manager, self).on_broker_message(message)
-
         message = json.loads(message)
         if message['type'] == "new":
             data = self.device.get_seat_info()
+            data[0] = dict(uid=self.power_node.uid, seat_number=0)
             logger.debug("Notify seat info to new client '{}'.".format(data))
             self.send_to_broker(Message.update_node(self.power_node.uid, "seat_info", data))
 

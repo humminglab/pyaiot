@@ -42,6 +42,7 @@ class Device():
             logger.setLevel(logging.DEBUG)
 
         self.db = Database()
+        self.total_seats = int(self.db.get_conf('total_seats', 24))
         self.nodes = self.db.get_all_devices()
         for n in self.nodes:
             n.update({'data': {}, 'active': False})
@@ -51,9 +52,11 @@ class Device():
         self.unkown_uids_data = {}
 
     def get_seat_info(self):
-        data = []
+        # id 0 is control id, seat number start from 1
+        data = [None] * (self.total_seats + 1)
         for node in self.nodes:
-            data.append(dict(uid=node['device_id'], seat_number=node['seat_number'], group_number=node['group_number']))
+            data[node['seat_number']] = dict(uid=node['device_id'], seat_number=node['seat_number'],
+                                             group_number=node['group_number'])
         return data
 
     def is_registered_device(self, id):
