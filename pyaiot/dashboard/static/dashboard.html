@@ -79,7 +79,7 @@ if (theme == 'dark') {
                     <span class="icon-bar"></span>
                 </button>
                 {% if logo_url %}<img class="navbar-brand" src="{{ logo_url }}" style="margin-top: -3px">{% end %}
-                <a class="navbar-brand" href="javascript:void(0)">{{ title }}</a>
+                <a class="navbar-brand" href="javascript:void(0)"><i class="fa fa-lg fa-bus"></i> 버스충전시스템</a>
             </div>
             <div class="navbar-collapse collapse navbar-inverse-collapse">
                 <ul class="nav navbar-nav">
@@ -118,6 +118,62 @@ if (theme == 'dark') {
         </div>
     </div>
 
+    <div class="container">
+        <table class="table table-striped table-responsive">
+            <tbody>
+            <tr>
+                <th style="width: 10%">
+                    <h4>시스템</h4>
+                </th>
+                <th style="width: 30%">
+                    <div class="h5 text-muted">온도</div>
+                    <div class="h3">{{!nodes[0].data.temperature}}℃</div>
+                </th>
+                <th style="width: 30%">
+                    <div class="h5 text-muted">습도</div>
+                    <div class="h3">{{!nodes[0].data.humidity}}%</div>
+                </th>
+                <th style="width: 40%">
+                    <div class="h5 text-muted">주장</div>
+                    <div class="h3">정상</div>
+                </th>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container">
+        <table class="table table-stripped table-responsive">
+            <tbody>
+            <tr>
+                <th style="width: 10%">
+                    <h4>전압</h4>
+                </th>
+                <th style="width: 20%">
+                    <div class="h5 text-muted">평균</div>
+                    <div class="h3">{{! nodes[0].data.group_voltage.reduce( ( p, c ) => p + parseFloat(c), 0 ) / nodes[0].data.group_voltage.length }} V</div>
+                </th>
+                <th v-for="(voltage, index) in nodes[0].data.group_voltage" style="width: 20%">
+                    <div class="h5 text-muted">그룹 {{! 'ABCDEFG'.charAt(index) }}</div>
+                    <div class="h3">{{!voltage}} V</div>
+                </th>
+            </tr>
+            <tr>
+                <th>
+                    <h4>전류</h4>
+                </th>
+                <th>
+                    <div class="h5 text-muted">전체</div>
+                    <div class="h3">{{! nodes[0].data.group_current.reduce( ( p, c ) => p + parseFloat(c), 0 ) }} A</div>
+                </th>
+                <th v-for="(voltage, index) in nodes[0].data.group_current">
+                    <div class="h5 text-muted">그룹 {{! 'ABCDEFG'.charAt(index) }}</div>
+                    <div class="h3">{{!voltage}} A</div>
+                </th>
+            </tr>
+            </tbody>
+        </table>
+    </div>
     <div class="container">
         <table class="table table-stripped">
             <thead>
