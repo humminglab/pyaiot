@@ -303,7 +303,9 @@ var vm = new Vue({
 // initialize bootstrap material design
 $.material.init()
 
-var ws = new WebSocket('{{ wsproto }}://{{ wsserver }}/ws')
+var url = '{{ wsproto }}://{{ wsserver }}/ws'
+url = url.replace('localhost', window.location.hostname)
+var ws = new WebSocket(url)
 
 ws.onopen = function() {
     console.log("WebSocket is ready")
