@@ -311,7 +311,7 @@ ws.onopen = function() {
 }
 ws.onmessage = function(event) {
     let msg = JSON.parse(event.data)
-    receive_message(msg)
+    receiveMessage(msg)
 }
 ws.onclose = function(ev){
     console.log("WebSocket closed")
@@ -329,7 +329,7 @@ function Node(data={}) {
     this.visible = true
 }
 
-function rebuild_nodes() {
+function rebuildNodes() {
     let len = vm.seat_info.length
     Vue.set(vm.nodes, 'length', len)
 
@@ -357,7 +357,7 @@ function rebuild_nodes() {
     }
 }
 
-function receive_message(msg) {
+function receiveMessage(msg) {
     let node_uid = msg.uid
     let index = vm.nodes.map(e => e.uid).indexOf(node_uid)
 
@@ -385,7 +385,7 @@ function receive_message(msg) {
             let endpoint = msg.endpoint.replace(/^\//g, '') // remove leading slash
             if (endpoint == 'seat_info') {
                 vm.seat_info = msg.data
-                rebuild_nodes()
+                rebuildNodes()
                 break
             }
 
@@ -410,14 +410,14 @@ function receive_message(msg) {
             console.log('Unknown command', msg.type)
             break
     }
-    Vue.nextTick(refresh_layout)
+    Vue.nextTick(refreshLayout)
 }
 
 function sendData(type, data) {
     ws.send(JSON.stringify({"type": type, "data": data}))
 }
 
-function refresh_layout() {
+function refreshLayout() {
 }
 
 $('#selectTheme').change(function () {
