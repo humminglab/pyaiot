@@ -123,6 +123,7 @@ def run(arguments=[]):
 
     try:
         parse_command_line(extra_args_func=extra_args)
+        options.static_path = os.path.expanduser(options.static_path)
     except SyntaxError as exc:
         logger.error("Invalid config file: {}".format(exc))
         return
