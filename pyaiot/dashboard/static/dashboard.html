@@ -84,6 +84,24 @@ if (theme == 'dark') {
             </div>
             <div class="navbar-collapse collapse navbar-inverse-collapse">
                 <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a href="#" data-target="#" class="dropdown-toggle" data-toggle="dropdown">
+                            좌석표시항목
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li v-for="(resource, index) in resources">
+                                <a :href="'#resource'+index">
+                                    <div class="checkbox" style="display: inline; margin-right: 5px;" @click.stop @change="Vue.nextTick(refresh_layout)">
+                                        <label>
+                                            <input type="checkbox" v-model="resource.visible">
+                                        </label>
+                                    </div>
+                                    {{! resource.name }}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
                     <li>
@@ -183,12 +201,12 @@ if (theme == 'dark') {
             <thead>
             <tr>
                 <th style="width: 10%">좌석</th>
-                <th style="width: 20%">상태</th>
-                <th style="width: 10%">전압(V)</th>
-                <th style="width: 10%">전류(A)</th>
-                <th style="width: 10%">그룹</th>
-                <th style="width: 10%">IP</th>
-                <th style="width: 10%">버전</th>
+                <th style="width: 20%" v-show="resources.status.visible">상태</th>
+                <th style="width: 10%" v-show="resources.voltage.visible">전압(V)</th>
+                <th style="width: 10%" v-show="resources.current.visible">전류(A)</th>
+                <th style="width: 10%" v-show="resources.group.visible">그룹</th>
+                <th style="width: 10%" v-show="resources.ip.visible">IP</th>
+                <th style="width: 10%" v-show="resources.version.visible">버전</th>
             </tr>
             </thead>
             <tbody>
@@ -196,7 +214,7 @@ if (theme == 'dark') {
                 <th>
                     {{! index+1 }}
                 </th>
-                <th>
+                <th v-show="resources.status.visible">
                     <span v-if="!node.uid" class="text-disabled">
                         <i class="fa fa-lg fa-ban"></i><span class="small">미등록</span>
                     </span>
@@ -222,19 +240,19 @@ if (theme == 'dark') {
                             <i class="fa fa-lg fa-battery-0"></i>
                     </span>
                 </th>
-                <th>
+                <th v-show="resources.voltage.visible">
                     <span v-if="'voltage' in node.data">{{! (node.data.voltage / 190.).toFixed(1) }}</span>
                 </th>
-                <th>
+                <th v-show="resources.current.visible">
                     <span v-if="'current' in node.data">{{! node.data.current }}</span>
                 </th>
-                <th>
+                <th v-show="resources.group.visible">
                     <span v-if="seat_info[index+1]">{{! '-ABCDEFG'.charAt(seat_info[index+1].group_number) }}</span>
                 </th>
-                <th>
+                <th v-show="resources.ip.visible">
                     <span v-if="'ip' in node.data">{{! (node.data.ip).replace('::ffff:','') }}</span>
                 </th>
-                <th>
+                <th v-show="resources.version.visible">
                     <span v-if="'version' in node.data">{{! node.data.version }}</span>
                 </th>
             </tr>
