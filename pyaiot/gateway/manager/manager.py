@@ -120,7 +120,7 @@ class Manager(GatewayBase):
         elif message['type'] == 'out':
             self.device.device_out(message)
         elif message['type'] == 'reset':
-            self.devcie.device_reset(message)
+            self.device.device_reset(message)
         elif message['type'] == 'update':
             self.device.device_update(message)
         else:
