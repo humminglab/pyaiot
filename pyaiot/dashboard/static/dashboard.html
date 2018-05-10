@@ -145,17 +145,19 @@ if (theme == 'dark') {
                     <th style="width: 10%">
                         시스템
                     </th>
-                    <th style="width: 30%">
+                    <th style="width: 10%">
                         <div class="h6 text-muted">온도</div>
                         <div class="h4">{{!nodes[0].data.temperature}}℃</div>
                     </th>
-                    <th style="width: 30%">
+                    <th style="width: 10%">
                         <div class="h6 text-muted">습도</div>
                         <div class="h4">{{!nodes[0].data.humidity}}%</div>
                     </th>
-                    <th style="width: 40%">
+                    <th style="width: 10%">
                         <div class="h6 text-muted">주장치</div>
                         <div class="h4">정상</div>
+                    <th style="width: 10%"></th>
+                    <th style="width: 10%"></th>
                     </th>
                 </tr>
                 </tbody>
@@ -169,26 +171,28 @@ if (theme == 'dark') {
                     <th style="width: 10%">
                         전압(V)
                     </th>
-                    <th style="width: 10%">
-                        <div class="h6 text-muted">평균</div>
-                        <div class="h4">{{! nodes[0].data.group_voltage.reduce( ( p, c ) => p + parseFloat(c), 0 ) / nodes[0].data.group_voltage.length }}</div>
-                    </th>
                     <th v-for="(voltage, index) in nodes[0].data.group_voltage" style="width: 10%">
                         <div class="h6 text-muted">그룹 {{! 'ABCDEFG'.charAt(index) }}</div>
-                        <div class="h4">{{! voltage }}</div>
+                        <div class="h4">{{! (voltage/112.).toFixed(1) }}</div>
+                        <div class="h5" v-show="resources.voltage_raw.visible">({{! voltage }})</div>
+                    </th>
+                    <th style="width: 10%">
+                        <!--<div class="h6 text-muted">평균</div>-->
+                        <!--<div class="h4">{{! ((nodes[0].data.group_voltage.reduce( ( p, c ) => p + parseFloat(c), 0 ) / nodes[0].data.group_voltage.length) / 112.).toFixed(1) }}</div>-->
                     </th>
                 </tr>
                 <tr>
                     <th>
                         전류(A)
                     </th>
+                    <th v-for="(current, index) in nodes[0].data.group_current">
+                        <div class="h6 text-muted">그룹 {{! 'ABCDEFG'.charAt(index) }}</div>
+                        <div class="h4">{{! current }}</div>
+                        <div class="h5" v-show="resources.current_raw.visible">({{! current }})</div>
+                    </th>
                     <th>
                         <div class="h6 text-muted">전체</div>
                         <div class="h4">{{! nodes[0].data.group_current.reduce( ( p, c ) => p + parseFloat(c), 0 ) }}</div>
-                    </th>
-                    <th v-for="(voltage, index) in nodes[0].data.group_current">
-                        <div class="h6 text-muted">그룹 {{! 'ABCDEFG'.charAt(index) }}</div>
-                        <div class="h4">{{!voltage}}</div>
                     </th>
                 </tr>
                 </tbody>
@@ -200,11 +204,13 @@ if (theme == 'dark') {
         <table class="table table-responsive">
             <thead>
             <tr>
-                <th style="width: 10%">좌석</th>
+                <th style="width: 3%">좌석</th>
+                <th style="width: 3%" v-show="resources.group.visible">그룹</th>
                 <th style="width: 20%" v-show="resources.status.visible">상태</th>
                 <th style="width: 10%" v-show="resources.voltage.visible">전압(V)</th>
+                <th style="width: 10%" v-show="resources.voltage_raw.visible">전압(RAW)</th>
                 <th style="width: 10%" v-show="resources.current.visible">전류(A)</th>
-                <th style="width: 10%" v-show="resources.group.visible">그룹</th>
+                <th style="width: 10%" v-show="resources.current_raw.visible">전류(RAW)</th>
                 <th style="width: 10%" v-show="resources.ip.visible">IP</th>
                 <th style="width: 10%" v-show="resources.version.visible">버전</th>
             </tr>
@@ -213,6 +219,9 @@ if (theme == 'dark') {
             <tr v-for="(node, index) in nodes.slice(1)">
                 <th>
                     {{! index+1 }}
+                </th>
+                <th v-show="resources.group.visible">
+                    <span v-if="seat_info[index+1]">{{! '-ABCDEFG'.charAt(seat_info[index+1].group_number) }}</span>
                 </th>
                 <th v-show="resources.status.visible">
                     <span v-if="!node.uid" class="text-disabled">
@@ -243,11 +252,14 @@ if (theme == 'dark') {
                 <th v-show="resources.voltage.visible">
                     <span v-if="'voltage' in node.data">{{! (node.data.voltage / 190.).toFixed(1) }}</span>
                 </th>
-                <th v-show="resources.current.visible">
-                    <span v-if="'current' in node.data">{{! node.data.current }}</span>
+                <th v-show="resources.voltage_raw.visible">
+                    <span v-if="'voltage' in node.data">{{! node.data.voltage }}</span>
                 </th>
-                <th v-show="resources.group.visible">
-                    <span v-if="seat_info[index+1]">{{! '-ABCDEFG'.charAt(seat_info[index+1].group_number) }}</span>
+                <th v-show="resources.current.visible">
+                    <span v-if="'current' in node.data">{{! (node.data.current/1220./2.304).toFixed(2) }}</span>
+                </th>
+                <th v-show="resources.current_raw.visible">
+                    <span v-if="'current' in node.data">{{! node.data.current }}</span>
                 </th>
                 <th v-show="resources.ip.visible">
                     <span v-if="'ip' in node.data">{{! (node.data.ip).replace('::ffff:','') }}</span>
@@ -269,10 +281,12 @@ function Resource(name, visible=true) {
 
 var data = {
     resources: {
+        group: Resource("그룹"),
         status: Resource("상태"),
         voltage: Resource("전압"),
+        voltage_raw: Resource("전압(RAW)", false),
         current: Resource("전류"),
-        group: Resource("그룹"),
+        current_raw: Resource("전류(RAW)", false),
         ip: Resource("IP", false),
         version: Resource("버전", false),
     },
