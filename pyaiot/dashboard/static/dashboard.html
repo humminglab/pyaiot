@@ -79,7 +79,8 @@ if (theme == 'dark') {
                     <span class="icon-bar"></span>
                 </button>
                 {% if logo_url %}<img class="navbar-brand" src="{{ logo_url }}" style="margin-top: -3px">{% end %}
-                <a class="navbar-brand" href="javascript:void(0)"><i class="fa fa-lg fa-bus"></i> 버스충전시스템</a>
+                <a class="navbar-brand" href="javascript:void(0)"><i class="fa fa-lg fa-bus"></i> 버스충전시스템
+                    ({{! nodes.slice(1).reduce((acc, cur)=>acc + (cur.active ? 1 : 0), 0) }}/{{! (nodes.length-1) }}) </a>
             </div>
             <div class="navbar-collapse collapse navbar-inverse-collapse">
                 <ul class="nav navbar-nav">
@@ -124,7 +125,7 @@ if (theme == 'dark') {
                 <tbody>
                 <tr>
                     <th style="width: 10%">
-                        <h5>시스템</h5>
+                        시스템
                     </th>
                     <th style="width: 30%">
                         <div class="h6 text-muted">온도</div>
@@ -148,20 +149,20 @@ if (theme == 'dark') {
                 <tbody>
                 <tr>
                     <th style="width: 10%">
-                        <h5>전압(V)</h5>
+                        전압(V)
                     </th>
-                    <th style="width: 20%">
+                    <th style="width: 10%">
                         <div class="h6 text-muted">평균</div>
                         <div class="h4">{{! nodes[0].data.group_voltage.reduce( ( p, c ) => p + parseFloat(c), 0 ) / nodes[0].data.group_voltage.length }}</div>
                     </th>
-                    <th v-for="(voltage, index) in nodes[0].data.group_voltage" style="width: 20%">
+                    <th v-for="(voltage, index) in nodes[0].data.group_voltage" style="width: 10%">
                         <div class="h6 text-muted">그룹 {{! 'ABCDEFG'.charAt(index) }}</div>
-                        <div class="h4">{{!voltage}}</div>
+                        <div class="h4">{{! voltage }}</div>
                     </th>
                 </tr>
                 <tr>
                     <th>
-                        <h5>전류(A)</h5>
+                        전류(A)
                     </th>
                     <th>
                         <div class="h6 text-muted">전체</div>
@@ -178,13 +179,15 @@ if (theme == 'dark') {
     </template>
 
     <div class="container">
-        <table class="table table-stripped">
+        <table class="table table-responsive">
             <thead>
             <tr>
                 <th style="width: 10%">좌석</th>
                 <th style="width: 20%">상태</th>
                 <th style="width: 10%">전압(V)</th>
                 <th style="width: 10%">전류(A)</th>
+                <th style="width: 10%">그룹</th>
+                <th style="width: 10%">IP</th>
                 <th style="width: 10%">버전</th>
             </tr>
             </thead>
@@ -195,7 +198,6 @@ if (theme == 'dark') {
                 </th>
                 <th>
                     <span v-if="!node.uid" class="text-disabled">
-                        <!--<i class="material-icons">not_interested</i><span class="small">미등록</span>-->
                         <i class="fa fa-lg fa-ban"></i><span class="small">미등록</span>
                     </span>
                     <span v-else-if="!node.active" class="text-warning">
@@ -221,10 +223,16 @@ if (theme == 'dark') {
                     </span>
                 </th>
                 <th>
-                    <span v-if="'voltage' in node.data">{{! node.data.voltage }}</span>
+                    <span v-if="'voltage' in node.data">{{! (node.data.voltage / 190.).toFixed(1) }}</span>
                 </th>
                 <th>
                     <span v-if="'current' in node.data">{{! node.data.current }}</span>
+                </th>
+                <th>
+                    <span v-if="seat_info[index+1]">{{! '-ABCDEFG'.charAt(seat_info[index+1].group_number) }}</span>
+                </th>
+                <th>
+                    <span v-if="'ip' in node.data">{{! (node.data.ip).replace('::ffff:','') }}</span>
                 </th>
                 <th>
                     <span v-if="'version' in node.data">{{! node.data.version }}</span>
@@ -237,9 +245,19 @@ if (theme == 'dark') {
 </div>
 
 <script>
-var node_charts = {}
+function Resource(name, visible=true) {
+    return {name: name, visible: visible}
+}
 
 var data = {
+    resources: {
+        status: Resource("상태"),
+        voltage: Resource("전압"),
+        current: Resource("전류"),
+        group: Resource("그룹"),
+        ip: Resource("IP", false),
+        version: Resource("버전", false),
+    },
     nodes: [],
     unregs: {},
     seat_info: [],
