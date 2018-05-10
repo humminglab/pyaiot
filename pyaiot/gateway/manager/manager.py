@@ -133,7 +133,7 @@ class Manager(GatewayBase):
         message = json.loads(message)
         if message['type'] == "new":
             data = self.device.get_seat_info()
-            data[0] = dict(uid=self.power_node.uid, seat_number=0)
+            data[0] = dict(uid=self.power_node.uid, seat_number=0, group_number=0)
             logger.debug("Notify seat info to new client '{}'.".format(data))
             self.send_to_broker(Message.update_node(self.power_node.uid, "seat_info", data))
 
