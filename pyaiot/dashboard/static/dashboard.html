@@ -209,10 +209,10 @@ if (theme == 'dark') {
                     </span>
 
                     <template v-if="node.active && 'usb' in node.data && node.data.usb != '0'">
-                        <span v-if="'fastcharge' in node.data && node.data.fastcharge != '0'" class="text-danger">
+                        <span v-if="'fastcharge' in node.data && node.data.fastcharge != '0'" class="text-primary">
                             <i class="fa fa-lg fa-battery-3"></i>
                         </span>
-                        <span v-else class="text-success">
+                        <span v-else class="text-dark">
                             <i class="fa fa-lg fa-battery-2"></i>
                         </span>
                     </template>

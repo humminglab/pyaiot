@@ -55,6 +55,17 @@ class DashboardHandler(web.RequestHandler):
                     logo_url=options.logo,
                     title=options.title)
 
+class DashboardOrgHandler(web.RequestHandler):
+    def get(self, path=None):
+        self.render("dashboard-org.html",
+                    wsproto="wss" if options.broker_ssl else "ws",
+                    wsserver="{}:{}".format(options.broker_host,
+                                            options.broker_port),
+                    camera_url=options.camera_url,
+                    favicon=options.favicon,
+                    logo_url=options.logo,
+                    title=options.title)
+
 
 class Dashboard(web.Application):
     """Tornado based web application providing an IoT Dashboard."""
@@ -66,6 +77,7 @@ class Dashboard(web.Application):
 
         handlers = [
             (r'/', DashboardHandler),
+            (r'/org', DashboardOrgHandler),
         ]
         settings = {'debug': True,
                     "cookie_secret": "MY_COOKIE_ID",
