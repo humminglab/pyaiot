@@ -187,12 +187,12 @@ if (theme == 'dark') {
                     </th>
                     <th v-for="(current, index) in nodes[0].data.group_current">
                         <div class="h6 text-muted">그룹 {{! 'ABCDEFG'.charAt(index) }}</div>
-                        <div class="h4">{{! current }}</div>
+                        <div class="h4">{{! (current/260.).toFixed(2) }}</div>
                         <div class="h5" v-show="resources.current_raw.visible">({{! current }})</div>
                     </th>
                     <th>
                         <div class="h6 text-muted">전체</div>
-                        <div class="h4">{{! nodes[0].data.group_current.reduce( ( p, c ) => p + parseFloat(c), 0 ) }}</div>
+                        <div class="h4">{{! (nodes[0].data.group_current.reduce( ( p, c ) => p + parseFloat(c), 0 )/260.).toFixed(2) }}</div>
                     </th>
                 </tr>
                 </tbody>
