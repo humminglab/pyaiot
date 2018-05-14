@@ -1,10 +1,10 @@
 
 # Define default variables
-STATIC_PATH       ?= ./pyaiot/dashboard/static/
+STATIC_PATH       ?= ~/project/pyaiot/pyaiot/dashboard/static/
 BROKER_PORT       ?= 8082
-BROKER_HOST       ?= localhsot
+BROKER_HOST       ?= localhost
 DASHBOARD_PORT    ?= 8080
-DASHBOARD_TITLE   ?= "USB Charger Dashboard"
+DASHBOARD_TITLE   ?= "Charger Dashboard"
 DASHBOARD_LOGO    ?= /static/assets/logo-riot.png
 DASHBOARD_FAVICON ?= /static/assets/favicon192.png
 CAMERA_URL ?= http://riot-demo.inria.fr/demo-cam/?action=stream
@@ -23,10 +23,13 @@ install-dev:
 	make setup-dashboard-npm
 
 setup-core-services: setup-broker-service \
-	setup-dashboard-service
+	setup-dashboard-service \
+	setup-coap-gateway-service \
+	setup-manager-service
 
 aiot-broker.service:
 	sudo cp systemd/aiot-broker.service /lib/systemd/system/.
+	sudo systemctl disable aiot-broker.service
 	sudo systemctl enable aiot-broker.service
 	sudo systemctl daemon-reload
 	sudo systemctl restart aiot-broker.service
@@ -34,8 +37,19 @@ aiot-broker.service:
 
 setup-broker-service: aiot-broker.service
 
+aiot-manager.service:
+	sudo cp systemd/aiot-manager.service /lib/systemd/system/.
+	sudo systemctl disable aiot-manager.service
+	sudo systemctl enable aiot-manager.service
+	sudo systemctl daemon-reload
+	sudo systemctl restart aiot-manager.service
+	sudo systemctl status aiot-manager.service
+
+setup-manager-service: aiot-manager.service
+
 aiot-coap-gateway.service:
 	sudo cp systemd/aiot-coap-gateway.service /lib/systemd/system/.
+	sudo systemctl disable aiot-coap-gateway.service
 	sudo systemctl enable aiot-coap-gateway.service
 	sudo systemctl daemon-reload
 	sudo systemctl restart aiot-coap-gateway.service
@@ -58,6 +72,7 @@ setup-dashboard-npm:
 
 aiot-dashboard.service:
 	sudo cp systemd/aiot-dashboard.service /lib/systemd/system/.
+	sudo systemctl disable aiot-dashboard.service
 	sudo systemctl enable aiot-dashboard.service
 	sudo systemctl daemon-reload
 	sudo systemctl restart aiot-dashboard.service

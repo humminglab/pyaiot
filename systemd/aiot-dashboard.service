@@ -1,10 +1,10 @@
 [Unit]
 Description=Pyaiot Dashboard Application
-After=network.target radvd.service
+After=network.target radvd.service aiot-broker.service
 
 [Service]
 User=pi
-Environment='STATIC_PATH=' \
+Environment='STATIC_PATH=~/project/pyaiot/pyaiot/dashboard/static/' \
         'HTTP_PORT=8080' \
         'BROKER_PORT=8082' \
         'BROKER_HOST=localhost' \
