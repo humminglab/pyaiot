@@ -206,6 +206,7 @@ if (theme == 'dark') {
             <tr>
                 <th style="width: 3%">좌석</th>
                 <th style="width: 3%" v-show="resources.group.visible">그룹</th>
+                <th style="width: 10%" v-show="resources.device_id.visible">Device ID</th>
                 <th style="width: 20%" v-show="resources.status.visible">상태</th>
                 <th style="width: 10%" v-show="resources.voltage.visible">전압(V)</th>
                 <th style="width: 10%" v-show="resources.voltage_raw.visible">전압(RAW)</th>
@@ -222,6 +223,9 @@ if (theme == 'dark') {
                 </th>
                 <th v-show="resources.group.visible">
                     <span v-if="seat_info[index+1]">{{! '-ABCDEFG'.charAt(seat_info[index+1].group_number) }}</span>
+                </th>
+                <th v-show="resources.device_id.visible">
+                    <span v-if="'uid' in node">{{! node.uid }}</span>
                 </th>
                 <th v-show="resources.status.visible">
                     <span v-if="!node.uid" class="text-disabled">
@@ -282,6 +286,7 @@ function Resource(name, visible=true) {
 var data = {
     resources: {
         group: Resource("그룹"),
+        device_id: Resource("Device ID", false),
         status: Resource("상태"),
         voltage: Resource("전압"),
         voltage_raw: Resource("전압(RAW)", false),
