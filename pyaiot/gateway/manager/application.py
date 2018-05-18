@@ -50,6 +50,9 @@ def extra_args():
         define("static_path",
                default=os.path.join(os.path.dirname(__file__), "../../dashboard/static"),
                help="Static files path (containing npm package.json file)")
+    if not hasattr(options, "web_port"):
+        define("web_port", default=8080,
+               help="Web application HTTP port")
 
 def run(arguments=[]):
     """Start the websocket gateway instance."""
