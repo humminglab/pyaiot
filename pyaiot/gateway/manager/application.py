@@ -30,6 +30,7 @@
 """Broker application module."""
 
 import sys
+import os
 import logging
 from tornado.options import define, options
 
@@ -45,7 +46,10 @@ logger = logging.getLogger("pyaiot.gw.ws")
 
 def extra_args():
     """Parse command line arguments for Manager application."""
-    pass
+    if not hasattr(options, "static_path"):
+        define("static_path",
+               default=os.path.join(os.path.dirname(__file__), "../../dashboard/static"),
+               help="Static files path (containing npm package.json file)")
 
 def run(arguments=[]):
     """Start the websocket gateway instance."""
@@ -54,6 +58,7 @@ def run(arguments=[]):
 
     try:
         parse_command_line(extra_args_func=extra_args)
+        options.static_path = os.path.expanduser(options.static_path)
     except SyntaxError as exc:
         logger.error("Invalid config file: {}".format(exc))
         return
