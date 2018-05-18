@@ -30,14 +30,17 @@
 """Manager module to coordinate total system"""
 
 import logging
-import time
 import uuid
 import asyncio
 import json
+import os
+import glob
+import hashlib
 
 from tornado.websocket import websocket_connect
+from tornado.options import options
 from pyaiot.gateway.common import GatewayBase, Node
-from pyaiot.common.messaging import Message
+from pyaiot.common.messaging import check_broker_data, Message
 
 try:
     from .powernode import PowerNode
@@ -68,6 +71,7 @@ class Manager(GatewayBase):
         self.power_device = None
         self.power_data = None
         self.websock = None
+        self.client_uid = None
         asyncio.ensure_future(self.coroutine_init())
 
     async def coroutine_init(self):
@@ -131,11 +135,75 @@ class Manager(GatewayBase):
         """Handle a message received from client to gateways"""
         super(Manager, self).on_broker_message(message)
         message = json.loads(message)
-        if message['type'] == "new":
+
+        # get uid of itself
+        if not self.client_uid and message['type'] == 'new' and message['data'] == 'manager_client':
+            self.client_uid = message['src']
+            return
+
+        # from itself
+        if message['src'] == self.client_uid:
+            return
+
+        if message['type'] == 'new':
             data = self.device.get_seat_info()
             data[0] = dict(uid=self.power_node.uid, seat_number=0, group_number=0)
             logger.debug("Notify seat info to new client '{}'.".format(data))
             self.send_to_broker(Message.update_node(self.power_node.uid, "seat_info", data))
+        elif (message['type'] == "update" and
+              check_broker_data(message['data'])):
+            data = message['data']
+            # Received when a client update a node
+            if data['uid'] != self.power_node.uid:
+                return
+
+            if data['endpoint'] == 'trigger_ota':
+                self.broadcast_upgrade()
+        else:
+            logger.debug("Invalid data received from broker '{}'."
+                         .format(message['data']))
+
+    def md5(self, firmware_filename):
+        hash_md5 = hashlib.md5()
+        with open(firmware_filename, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+
+    def broadcast_upgrade(self):
+        fullnames = [f for f in glob.glob('{}firmware/node-*.img'.format(options.static_path))]
+        if len(fullnames) <= 0:
+            logger.error("Can not find firmware file")
+            return
+
+        fullname = fullnames[0]
+        filename = os.path.basename(fullname)
+        name, ext = os.path.splitext(filename)
+        _, version = name.split('-')
+
+        if not name and not ext and not version:
+            return
+
+        path = '/static/firmware/{}'.format(filename)
+        md5 = self.md5(fullname)
+        nodes = self.device.get_upgradable_devices(version)
+        logger.debug('Firmwware {}, MD5={}'.format(filename, md5))
+
+        for node in nodes:
+            self.websock.write_message(json.dumps({
+                'type': 'update',
+                'data': {
+                    'uid': node['device_id'],
+                    'endpoint': 'version',
+                    'payload': json.dumps({
+                        # FIXME: Need to get web server address dynamically
+                        'hostname': "192.168.0.2",
+                        'port': options.web_port,
+                        'md5': md5,
+                        'path': path
+                    })
+                }
+            }));
 
     async def create_client_connection(self, url):
         """Create an asynchronous connection to the broker."""
