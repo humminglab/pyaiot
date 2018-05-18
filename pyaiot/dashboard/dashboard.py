@@ -35,6 +35,8 @@ import os
 import os.path
 import sys
 import logging
+import hashlib, glob
+import json
 import tornado
 from tornado import web
 from tornado.options import define, options
@@ -66,6 +68,39 @@ class DashboardOrgHandler(web.RequestHandler):
                     logo_url=options.logo,
                     title=options.title)
 
+class NodeUpgrade(web.RequestHandler):
+    def post(self):
+        file = self.request.files['file'][0]['body']
+        filename = self.request.files['file'][0]['filename']
+
+        targets = self.upload_dev_firmware(filename, file)
+        self.write('OK')
+
+    def upload_dev_firmware(self, filename, data):
+        """save uploaded new firmware into firmware folder and remove old firmware files
+
+        Filename must be the following format.
+         - node-1.0.0.bin
+        """
+        filename = os.path.basename(filename)
+        name, ext = os.path.splitext(filename)
+
+        if len(name) == 0:
+            raise TypeError('Too short file name')
+
+        if name.find('-') < 0 or ext != '.img':
+            raise TypeError('Invalid firmware file name')
+
+        dev_type, version = name.split('-')
+        if dev_type not in ['node'] or len(version) == 0:
+            raise TypeError('Invalid firmware file name')
+
+        for f in glob.glob('{}firmware/{}*'.format(options.static_path, dev_type)):
+            logging.info('Remove old firmware: {}'.format(f))
+            os.remove(f)
+
+        with open('{}firmware/{}{}'.format(options.static_path, name, ext), 'wb') as f:
+            f.write(data)
 
 class Dashboard(web.Application):
     """Tornado based web application providing an IoT Dashboard."""
@@ -77,6 +112,7 @@ class Dashboard(web.Application):
 
         handlers = [
             (r'/', DashboardHandler),
+            (r'/node_upgrade', NodeUpgrade),
             (r'/org', DashboardOrgHandler),
         ]
         settings = {'debug': True,
