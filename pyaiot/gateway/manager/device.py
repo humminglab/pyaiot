@@ -59,6 +59,17 @@ class Device():
                                              group_number=node['group_number'])
         return data
 
+    def get_activate_devices(self):
+        """get registered and activated devices"""
+        nodes = [node for node in self.nodes if node['active']]
+        return nodes
+
+    def get_upgradable_devices(self, target_version):
+        """get devices to need to upgrade"""
+        nodes = [node for node in self.nodes if node['active'] and 'version' in node['data']
+                 and node['data']['version'] != target_version]
+        return nodes
+
     def is_registered_device(self, id):
         return self.uids[id] if id in self.uids else None
 
