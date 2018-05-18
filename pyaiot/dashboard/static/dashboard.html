@@ -54,6 +54,10 @@
     <!-- CodeMirror stylesheet -->
     <link rel="stylesheet" href="{{ static_url('node_modules/codemirror/lib/codemirror.css') }}">
 
+    <!-- axios -->
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/axios/dist/axios.min.js') }}"></script>
+
     <script src="{{ static_url('js/helpers.js') }}"></script>
 
     <!-- Pyaiot dashboard css -->
@@ -104,34 +108,32 @@ if (theme == 'dark') {
                     </li>
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
-                    <li>
-                        <a data-toggle="modal" data-target="#settingsModal" href="">
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="">
                             <i class="material-icons" style="line-height: inherit">settings</i>
+                            <span class="caret"></span>
                         </a>
+                        <ul class="dropdown-menu">
+                            <li> <a data-toggle="modal" data-target="#upgradeModal" href="#">Node Upgrade</a> </li>
+                            <li> <a href="#">System Info</a> </li>
+                        </ul>
                     </li>
                 </ul>
             </div>
         </div>
     </div>
-    <div class="modal" id="settingsModal">
+    <div class="modal" id="upgradeModal">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                        <h2 class="modal-title">Settings</h2>
+                    <h2 class="modal-title">Upgrade Nodes</h2>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group" style="margin: 0">
-                        <label for="selectTheme" class="control-label">Theme</label>
-                        <select id="selectTheme" class="form-control">
-                            <option value="dark">Dark</option>
-                            <option value="light">Light</option>
-                        </select>
-                    </div>
+                    <file-uploader></file-uploader>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">Save changes</button>
                 </div>
             </div>
         </div>
@@ -275,8 +277,50 @@ if (theme == 'dark') {
             </tbody>
         </table>
     </div>
-
 </div>
+
+
+<script>
+<!-- Single file uploader -->
+Vue.component('file-uploader', {
+    template: '  <div class="container">' +
+    '    <div class="large-12 medium-12 small-12 cell">' +
+    '      <label>Firmware' +
+    '        <input type="file" id="file" ref="file" v-on:change="handleFileUpload()"/>' +
+    '      </label>' +
+    '      <button v-on:click="submitFile()">업그레이드</button>' +
+    '    </div>' +
+    '  </div>',
+    data: function() {
+        return {file: ''}
+    },
+    methods: {
+        submitFile(){
+            let formData = new FormData();
+            formData.append('file', this.file);
+            axios.post( '/node_upgrade',
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            ).then(function(){
+                console.log('SUCCESS!!');
+                sendData("update",
+                    {"uid": vm.nodes[0].uid, "endpoint": "trigger_ota", "payload": ""})
+
+            }).catch(function(){
+                console.log('FAILURE!!');
+            });
+        }, handleFileUpload(){
+            this.file = this.$refs.file.files[0];
+        }
+    }
+})
+
+</script>
+
 
 <script>
 function Resource(name, visible=true) {
