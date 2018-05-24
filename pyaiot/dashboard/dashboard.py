@@ -36,23 +36,17 @@ import os.path
 import sys
 import logging
 import hashlib, glob
-import json
-import tornado
-from tornado import web
+import asyncio
+from tornado import web, websocket
 from tornado.options import define, options
 
 from pyaiot.common.helpers import start_application, parse_command_line
 
 logger = logging.getLogger("pyaiot.dashboard")
 
-
 class DashboardHandler(web.RequestHandler):
     def get(self, path=None):
         self.render("dashboard.html",
-                    wsproto="wss" if options.broker_ssl else "ws",
-                    wsserver="{}:{}".format(options.broker_host,
-                                            options.broker_port),
-                    camera_url=options.camera_url,
                     favicon=options.favicon,
                     logo_url=options.logo,
                     title=options.title)
@@ -102,6 +96,44 @@ class NodeUpgrade(web.RequestHandler):
         with open('{}firmware/{}{}'.format(options.static_path, name, ext), 'wb') as f:
             f.write(data)
 
+class WebsocketProxy(websocket.WebSocketHandler):
+    def __init__(self, application, request, **kwargs):
+        super(WebsocketProxy, self).__init__(application, request, **kwargs)
+        self.conn = None
+
+    def check_origin(self, origin):
+        return True
+
+    async def open(self):
+        url = "{}://{}:{}/ws".format(
+            "wss" if options.broker_ssl else "ws",
+            options.broker_host,
+            options.broker_port)
+        self.conn = await websocket.websocket_connect(url)
+        asyncio.ensure_future(self.proxy_read_handler())
+
+    async def proxy_read_handler(self):
+        if not self.conn:
+            return
+
+        while True:
+            msg = await self.conn.read_message()
+            if msg is None:
+                self.close()
+                break
+            self.write_message(msg)
+
+    async def on_message(self, msg):
+        if self.conn:
+            self.conn.write_message(msg)
+
+    def on_close(self):
+        """Remove websocket from internal list."""
+        if self.conn:
+            self.conn.close()
+            self.conn = None
+
+
 class Dashboard(web.Application):
     """Tornado based web application providing an IoT Dashboard."""
 
@@ -114,6 +146,7 @@ class Dashboard(web.Application):
             (r'/', DashboardHandler),
             (r'/node_upgrade', NodeUpgrade),
             (r'/org', DashboardOrgHandler),
+            (r'/ws', WebsocketProxy)
         ]
         settings = {'debug': True,
                     "cookie_secret": "MY_COOKIE_ID",
