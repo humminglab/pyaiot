@@ -55,8 +55,19 @@ POWER_MONITOR_INTERVAL = 3.0
 logger = logging.getLogger("pyaiot.gw.manager")
 
 class Manager(GatewayBase):
-    """Tornado based gateway application for manager"""
+    """Tornado based gateway application for manager
 
+    Manager is based on GatewayBase, and it is gateway.
+    But Manager also has a client role.
+    It create a client connection and save it in self.websock.
+    And it create power control device node.
+
+    - gateway role (on_broker_message)
+       - new: inform registered device database table
+       - update: check uploaded firmware image, calculate md5sum, and request ota to actived devices
+    - client role (on_client_message)
+       - receive all device events, save it into self.device, save log
+    """
     PROTOCOL = 'Manager'
 
     def __init__(self, keys, options):
@@ -75,6 +86,7 @@ class Manager(GatewayBase):
         asyncio.ensure_future(self.coroutine_init())
 
     async def coroutine_init(self):
+        """Initialize Manager in coroutine"""
         asyncio.ensure_future(self.create_client_connection(
             "ws://{}:{}/ws".format(self.options.broker_host, self.options.broker_port)))
 
@@ -96,11 +108,13 @@ class Manager(GatewayBase):
         await self.process_power_node()
 
     def new_power_report(self):
+        """Register power device to itself(gateway), and forward all data of power device"""
         self.add_node(self.power_node)
         for key, value in self.power_data.items():
             self.forward_data_from_node(self.power_node, key, value)
 
     async def process_power_node(self):
+        """Refresh power device state and forward data only modified"""
         while True:
             old_data = self.power_data
             self.power_data = await self.power_device.read()
@@ -164,6 +178,7 @@ class Manager(GatewayBase):
                          .format(message['data']))
 
     def md5(self, firmware_filename):
+        """Calculate md5 sum of firmware"""
         hash_md5 = hashlib.md5()
         with open(firmware_filename, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
@@ -171,6 +186,7 @@ class Manager(GatewayBase):
         return hash_md5.hexdigest()
 
     def broadcast_upgrade(self):
+        """Broadcast update notification to all active devices"""
         fullnames = [f for f in glob.glob('{}firmware/node-*.img'.format(options.static_path))]
         if len(fullnames) <= 0:
             logger.error("Can not find firmware file")
