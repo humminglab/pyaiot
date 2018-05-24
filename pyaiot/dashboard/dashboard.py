@@ -100,6 +100,7 @@ class WebsocketProxy(websocket.WebSocketHandler):
     def __init__(self, application, request, **kwargs):
         super(WebsocketProxy, self).__init__(application, request, **kwargs)
         self.conn = None
+        self.msg = []
 
     def check_origin(self, origin):
         return True
@@ -116,6 +117,10 @@ class WebsocketProxy(websocket.WebSocketHandler):
         if not self.conn:
             return
 
+        while len(self.msg) > 0:
+            msg = self.msg.pop()
+            self.conn.write_message(msg)
+
         while True:
             msg = await self.conn.read_message()
             if msg is None:
@@ -126,6 +131,8 @@ class WebsocketProxy(websocket.WebSocketHandler):
     async def on_message(self, msg):
         if self.conn:
             self.conn.write_message(msg)
+        else:
+            self.msg.append(msg)
 
     def on_close(self):
         """Remove websocket from internal list."""
