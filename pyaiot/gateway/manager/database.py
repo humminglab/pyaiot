@@ -104,9 +104,9 @@ class Database():
         """Insert log into logs table"""
         self.cursor.execute('INSERT INTO logs (timestamp, temperature, humidity, port_total, port_fault, port_charging, '
                             'port_fault_detail, port_charging_detail, system_fault, port_fast_charge_detail, power_on, '
-                            'voltage_average, current_sum, voltage_1, voltage_2, voltage_3, voltage_4, current_1, '
+                            'voltage_1, voltage_2, voltage_3, voltage_4, current_1, '
                             'current_2, current_3, current_4) '
-                            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                            'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                             (
                                 log['timestamp'] if 'timestamp' in log else datetime.now().timestamp(),
                                 log['temperature'], log['humidity'], len(log['port_fault']),
@@ -114,8 +114,6 @@ class Database():
                                 to_bitmap(log['port_fault']), to_bitmap(log['port_charging']),
                                 log['system_fault'], to_bitmap(log['port_fast_charge']),
                                 to_bitmap(log['power_on']),
-                                sum(log['group_voltage']) / float(len(log['group_voltage'])),
-                                sum(log['group_current']),
                                 log['group_voltage'][0], log['group_voltage'][1],
                                 log['group_voltage'][2], log['group_voltage'][3],
                                 log['group_current'][0], log['group_current'][1],
@@ -175,8 +173,6 @@ class Database():
                                 'system_fault INTEGER NOT NULL,'
                                 'port_fast_charge_detail TEXT NOT NULL,'
                                 'power_on TEXT NOT NULL,'
-                                'voltage_average REAL NOT NULL,'
-                                'current_sum REAL NOT NULL,'
                                 'voltage_1 REAL,'
                                 'voltage_2 REAL,'
                                 'voltage_3 REAL,'
