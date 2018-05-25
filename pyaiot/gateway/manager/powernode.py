@@ -65,6 +65,9 @@ class UartNode(asyncio.Protocol):
                 return lines[1].decode()
 
 class PowerNode():
+    OVER_CURRENT_WARN = 1
+    OVER_CURRENT_ERROR = 2
+
     def __init__(self):
         self.transport = None
         self.protocol = None
@@ -89,8 +92,8 @@ class PowerNode():
             data = dict(
                 temperature = d[0],
                 humidity = d[1],
-                group_power = [bool(x) for x in d[2:6]],
-                ap_power = bool(d[6]),
+                group_power = [x for x in d[2:6]],
+                ap_power = d[6],
                 group_voltage = d[7:11],
                 group_current = d[11:15]
             )
@@ -106,6 +109,38 @@ class PowerNode():
 
     def get_power(self):
         return self.power_state
+
+    @staticmethod
+    def adc_to_volt(adc):
+        return adc / 112.
+
+    @staticmethod
+    def adc_to_current(adc):
+        return adc / 260.
+
+    @staticmethod
+    def is_lower_voltage(adcs):
+        return all((PowerNode.adc_to_volt(adc) < 21 for adc in adcs))
+
+    @staticmethod
+    def is_good_voltage(adcs):
+        return any((PowerNode.adc_to_volt(adc) > 23 for adc in adcs))
+
+    @staticmethod
+    def over_current(adcs):
+        def check(a):
+            if a > 9:
+                return PowerNode.OVER_CURRENT_ERROR
+            elif a > 8:
+                return PowerNode.OVER_CURRENT_WARN
+            else:
+                return 0
+
+        currents = (PowerNode.adc_to_current(adc) for adc in adcs)
+
+    @staticmethod
+    def over_current_final(adcs):
+        return (PowerNode.adc_to_current(adc) > 9 for adc in adcs)
 
 
 if __name__ == '__main__':
