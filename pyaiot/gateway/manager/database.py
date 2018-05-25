@@ -36,7 +36,7 @@ DEFAULT_DB_FILENAME = "{}/.pyaiot/pyaiot.db".format(os.path.expanduser("~"))
 def to_bitmap(array):
     l = []
     for i in array:
-        l.append(1 if i else 0)
+        l.append('1' if i else '0')
     return ''.join(l)
 
 def count_nonzero(array):
