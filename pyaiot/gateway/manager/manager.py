@@ -37,6 +37,7 @@ import os
 import glob
 import hashlib
 
+from datetime import datetime
 from tornado.websocket import websocket_connect
 from tornado.options import options
 from pyaiot.gateway.common import GatewayBase, Node
@@ -70,6 +71,7 @@ class Manager(GatewayBase):
        - receive all device events, save it into self.device, save log
     """
     PROTOCOL = 'Manager'
+    MIN_POWER_LOG_INTERVAL = 10.
 
     def __init__(self, keys, options):
         super().__init__(keys, options)
@@ -85,6 +87,7 @@ class Manager(GatewayBase):
         self.power_data = None
         self.websock = None
         self.client_uid = None
+        self.last_power_log_time = None
         asyncio.ensure_future(self.coroutine_init())
 
     async def coroutine_init(self):
@@ -98,6 +101,8 @@ class Manager(GatewayBase):
                 break
             await asyncio.sleep(0.1)
 
+        self.db.insert_port_log('info', 'started manager', 'system')
+
         self.power_device = PowerNode()
         await self.power_device.wait_initialized()
 
@@ -105,6 +110,7 @@ class Manager(GatewayBase):
         await self.power_device.set([1, 1, 1, 1, 1])
 
         self.power_data = await self.power_device.read()
+        self.last_power_log_time = datetime.now()
         self.new_power_report()
         logger.info('Manager application started')
         await self.process_power_node()
@@ -114,15 +120,25 @@ class Manager(GatewayBase):
         self.add_node(self.power_node)
         for key, value in self.power_data.items():
             self.forward_data_from_node(self.power_node, key, value)
+            self.db.insert_port_log(key, value, 'power')
 
     async def process_power_node(self):
         """Refresh power device state and forward data only modified"""
         while True:
             old_data = self.power_data
             self.power_data = await self.power_device.read()
+
+            if (datetime.now() - self.last_power_log_time).total_seconds() > self.MIN_POWER_LOG_INTERVAL:
+                self.last_power_log_time = datetime.now()
+                enable_log = True
+            else:
+                enable_log = False
+
             for key, value in self.power_data.items():
                 if value != old_data[key]:
                     self.forward_data_from_node(self.power_node, key, value)
+                if enable_log:
+                    self.db.insert_port_log(key, value, 'power')
             await asyncio.sleep(POWER_MONITOR_INTERVAL)
 
     def on_client_message(self, message):

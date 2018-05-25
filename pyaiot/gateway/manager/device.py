@@ -79,12 +79,14 @@ class Device():
         data = {'active':True}
         if uid in self.uids:
             self.uids[uid].update(data)
+            self.db.insert_port_log('info', 'new seat {}'.format(self.uids[uid]['seat_number']), uid)
             return
         if uid in self.unkown_uids_data:
             self.unkown_uids_data[uid].update(data)
             return
 
         logger.debug('Create new device:{} in uids_unknown'.format(msg['uid']))
+        self.db.insert_port_log('info', 'new unknown device {}'.format(uid), 'other')
         self.unkown_uids_data.update({uid: data})
 
     def device_out(self, msg):
@@ -92,20 +94,24 @@ class Device():
         if uid in self.uids:
             logger.debug('Delete device:{} in udis'.format(uid))
             self.uids[uid].update({'active':False})
+            self.db.insert_port_log('info', 'out seat {}'.format(self.uids[uid]['seat_number']), uid)
         elif uid in self.unkown_uids_data[uid]:
             logger.debug('Delete device:{} in udis_unkonwn'.format(uid))
             del(self.unkown_uids_data[uid])
+            self.db.insert_port_log('info', 'out unknown device {}'.format(uid), 'other')
 
     def device_reset(self, msg):
         logger.debug('Delete device:{} in udis_unkonwn'.format(msg['uid']))
         uid = msg['uid']
         if uid in self.uids:
             self.uids[uid].update({'active':True})
+            self.db.insert_port_log('info', 'reset seat {}'.format(self.uids[uid]['seat_number']), uid)
             return
 
     def device_update(self, msg):
         uid = msg['uid']
         if uid in self.uids:
             self.uids[uid]['data'].update({msg['endpoint']:msg['data']})
+            self.db.insert_port_log(msg['endpoint'], msg['data'], uid)
         elif uid in self.unkown_uids_data:
             self.unkown_uids_data[uid].update({msg['endpoint']:msg['data']})
