@@ -72,6 +72,7 @@ class Manager(GatewayBase):
     """
     PROTOCOL = 'Manager'
     MIN_POWER_LOG_INTERVAL = 10.
+    SUMMARY_LOG_INTERVAL = 30.
 
     def __init__(self, keys, options):
         super().__init__(keys, options)
@@ -113,7 +114,24 @@ class Manager(GatewayBase):
         self.last_power_log_time = datetime.now()
         self.new_power_report()
         logger.info('Manager application started')
+
+        loop = asyncio.get_event_loop()
+        loop.call_later(self.SUMMARY_LOG_INTERVAL, self.summary_log)
+        # blocking loop
         await self.process_power_node()
+
+    def summary_log(self):
+        log = self.power_data.copy()
+        log.update(dict(
+            system_fault = 0,
+            # truncate ap power state
+            power_on = self.power_device.get_power()[:-1],
+        ))
+        log.update(self.device.get_seat_state())
+        self.db.insert_log(log)
+
+        loop = asyncio.get_event_loop()
+        loop.call_later(self.SUMMARY_LOG_INTERVAL, self.summary_log)
 
     def new_power_report(self):
         """Register power device to itself(gateway), and forward all data of power device"""
