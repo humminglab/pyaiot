@@ -52,12 +52,25 @@ class Device():
         self.unkown_uids_data = {}
 
     def get_seat_info(self):
-        # id 0 is control id, seat number start from 1
-        data = [None] * (self.total_seats + 1)
+        # seat number start from 1
+        data = [None] * (self.total_seats)
         for node in self.nodes:
-            data[node['seat_number']] = dict(uid=node['device_id'], seat_number=node['seat_number'],
-                                             group_number=node['group_number'])
+            data[node['seat_number'] - 1] = dict(
+                uid=node['device_id'],
+                seat_number=node['seat_number'],
+                group_number=node['group_number'])
         return data
+
+    # def get_seat_state(self):
+    #     state = dict(
+    #         port_fault = [0] * (self.total_seats + 1),
+    #         port_charging = [0] * (self.total_seats + 1),
+    #         port_fast_charge = []
+    #     )
+    #
+    #     for node in self.nodes:
+    #         if
+    #
 
     def get_activate_devices(self):
         """get registered and activated devices"""
