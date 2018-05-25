@@ -68,6 +68,7 @@ class PowerNode():
     def __init__(self):
         self.transport = None
         self.protocol = None
+        self.power_state = [0, 0, 0, 0, 0]
         self.lock = asyncio.Lock()
 
         asyncio.ensure_future(self.coroutine_init())
@@ -95,12 +96,17 @@ class PowerNode():
             )
             return data
 
-    async def set(self, ports):
+    async def set_power(self, ports):
         async with self.lock:
+            self.power_state = ports
             cmd_line = 'set ' + ' '.join(str(x) for x in ports)
             resp = await self.protocol.command(cmd_line)
             data = [bool(int(x)) for x in resp.split(' ')]
             return data
+
+    def get_power(self):
+        return self.power_state
+
 
 if __name__ == '__main__':
     async def test():
@@ -109,7 +115,7 @@ if __name__ == '__main__':
 
         while 1:
             print('Set 1')
-            resp = await node.set([1,1,1,1,1])
+            resp = await node.set_power([1, 1, 1, 1, 1])
             print(resp)
             await asyncio.sleep(1)
             print('Get')
@@ -117,7 +123,7 @@ if __name__ == '__main__':
             print(resp)
             await asyncio.sleep(3)
             print('Set 0')
-            resp = await node.set([0,1,1,1,1])
+            resp = await node.set_power([0, 1, 1, 1, 1])
             print(resp)
             await asyncio.sleep(1)
             print('Get')

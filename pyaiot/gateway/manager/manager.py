@@ -107,7 +107,7 @@ class Manager(GatewayBase):
         await self.power_device.wait_initialized()
 
         # power on
-        await self.power_device.set([1, 1, 1, 1, 1])
+        await self.power_device.set_power([1, 1, 1, 1, 1])
 
         self.power_data = await self.power_device.read()
         self.last_power_log_time = datetime.now()
