@@ -29,7 +29,7 @@
 
 import os.path
 import sqlite3
-import datetime
+from datetime import datetime
 
 DEFAULT_DB_FILENAME = "{}/.pyaiot/pyaiot.db".format(os.path.expanduser("~"))
 
@@ -51,6 +51,11 @@ def count_zero(array):
         count += int(not i)
     return count
 
+def to_string(data):
+    if type(data) == list or type(data) == tuple:
+        return ','.join(str(int(x)) if type(x) is bool else str(x) for x in data)
+    return data
+
 class Database():
     """Database for Bus Gateway"""
     def __init__(self):
@@ -65,10 +70,10 @@ class Database():
         self.cursor.execute('SELECT * FROM devices ORDER BY seat_number ASC')
         for i in self.cursor:
             dev = dict(
-                db_id = i[0],
-                device_id = i[1],
-                seat_number = i[2],
-                group_number = i[3])
+                db_id=i[0],
+                device_id=i[1],
+                seat_number=i[2],
+                group_number=i[3])
             devices.append(dev)
         return devices
 
@@ -92,7 +97,7 @@ class Database():
             return
 
         self.cursor.execute('DELETE FROM devices WHERE id == ?', (entry[0],))
-        self.cursor.execute('DELETE FROM port_logs WHERE device == ?', (entry[0],))
+        self.cursor.execute('DELETE FROM dev_logs WHERE device == ?', (entry[0],))
         self.conn.commit()
 
     def insert_log(self, log):
@@ -103,7 +108,7 @@ class Database():
                             'current_2, current_3, current_4) '
                             'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                             (
-                                log['timestamp'] if 'timestamp' in log else datetime.now(),
+                                log['timestamp'] if 'timestamp' in log else datetime.now().timestamp(),
                                 log['temperature'], log['humidity'], len(log['port_fault']),
                                 count_nonzero(log['port_fault']), count_nonzero(log['port_charging']),
                                 to_bitmap(log['port_fault']), to_bitmap(log['port_charging']),
@@ -116,18 +121,11 @@ class Database():
                             ))
         self.conn.commit()
 
-    def insert_port_log(self, log, db_id=None):
-        """Insert port log int port_logs"""
-        if db_id is None:
-            self.cursor.execute('SELECT id FROM devices WHERE device_id == ?', (log['device_id'],))
-            result = self.cursor.fetchone()
-            if not result:
-                return
-            db_id = result[0]
-
-        self.cursor.execute('INSERT INTO port_logs (timestamp, device, key, value) VALUES (?,?,?,?)',
-                            (log['timestamp'] if 'timestamp' in log else datetime.now(),
-                             db_id,log['key'], log['value']))
+    def insert_port_log(self, key, value, device_id):
+        """Insert port log int dev_logs"""
+        print(key, value, type(value), to_string(value), device_id)
+        self.cursor.execute('INSERT INTO dev_logs (timestamp, device_id, key, value) VALUES (?,?,?,?)',
+                            (datetime.now().timestamp(), device_id, key, to_string(value)))
 
     def throw_old_logs(self, before):
         """Remove log from database until 'before'"""
@@ -187,11 +185,11 @@ class Database():
                                 'current_3 REAL,'
                                 'current_4 REAL)')
 
-        if ('port_logs',) not in entries:
-            self.cursor.execute('CREATE TABLE port_logs ('
+        if ('dev_logs',) not in entries:
+            self.cursor.execute('CREATE TABLE dev_logs ('
                                 'id INTEGER PRIMARY KEY AUTOINCREMENT,'
                                 'timestamp NUMERIC NOT NULL,'
-                                'device INTEGER NOT NULL,'
+                                'device_id TEXT NOT NULL,'
                                 'key TEXT NOT NULL,'
                                 'value TEXT)')
 
