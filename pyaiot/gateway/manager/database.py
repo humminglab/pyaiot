@@ -36,7 +36,7 @@ DEFAULT_DB_FILENAME = "{}/.pyaiot/pyaiot.db".format(os.path.expanduser("~"))
 def to_bitmap(array):
     l = []
     for i in array:
-        l.append(str(i))
+        l.append(1 if i else 0)
     return ''.join(l)
 
 def count_nonzero(array):
@@ -114,16 +114,17 @@ class Database():
                                 to_bitmap(log['port_fault']), to_bitmap(log['port_charging']),
                                 log['system_fault'], to_bitmap(log['port_fast_charge']),
                                 to_bitmap(log['power_on']),
-                                sum(log['voltage']) / float(len(log['voltage'])),
-                                sum(log['current']),
-                                log['voltage'][0], log['voltage'][1], log['voltage'][2], log['voltage'][3],
-                                log['current'][0], log['current'][1], log['current'][2], log['current'][3]
+                                sum(log['group_voltage']) / float(len(log['group_voltage'])),
+                                sum(log['group_current']),
+                                log['group_voltage'][0], log['group_voltage'][1],
+                                log['group_voltage'][2], log['group_voltage'][3],
+                                log['group_current'][0], log['group_current'][1],
+                                log['group_current'][2], log['group_current'][3]
                             ))
         self.conn.commit()
 
     def insert_port_log(self, key, value, device_id):
         """Insert port log int dev_logs"""
-        print(key, value, type(value), to_string(value), device_id)
         self.cursor.execute('INSERT INTO dev_logs (timestamp, device_id, key, value) VALUES (?,?,?,?)',
                             (datetime.now().timestamp(), device_id, key, to_string(value)))
 
