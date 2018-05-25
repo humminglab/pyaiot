@@ -37,11 +37,11 @@ except:
     from database import Database
 
 class Device():
-    def __init__(self, options):
+    def __init__(self, database, options):
         if options.debug:
             logger.setLevel(logging.DEBUG)
 
-        self.db = Database()
+        self.db = database
         self.total_seats = int(self.db.get_conf('total_seats', 24))
         self.nodes = self.db.get_all_devices()
         for n in self.nodes:
