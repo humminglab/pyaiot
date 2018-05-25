@@ -36,6 +36,16 @@ try:
 except:
     from database import Database
 
+
+type_table = dict(
+    current=int,
+    fail=int,
+    fastcharge=int,
+    interval=int,
+    usb=int,
+    voltage=int
+)
+
 class Device():
     def __init__(self, database, options):
         if options.debug:
@@ -61,16 +71,27 @@ class Device():
                 group_number=node['group_number'])
         return data
 
-    # def get_seat_state(self):
-    #     state = dict(
-    #         port_fault = [0] * (self.total_seats + 1),
-    #         port_charging = [0] * (self.total_seats + 1),
-    #         port_fast_charge = []
-    #     )
-    #
-    #     for node in self.nodes:
-    #         if
-    #
+    def get_seat_state(self):
+        state = dict(
+            port_fault = [1] * (self.total_seats),
+            port_charging = [0] * (self.total_seats),
+            port_fast_charge = [0] * (self.total_seats)
+        )
+
+        for node in self.nodes:
+            index = node['seat_number'] - 1
+            if node['active']:
+                if 'fail' in node['data'] and node['data']['fail']:
+                    state['port_fault'][index] = node['data']['fail']
+                else:
+                    state['port_fault'][index] = 0
+
+                if 'usb' in node['data'] and node['data']['usb']:
+                    state['port_charging'][index] = 1
+
+                if 'fastcharge' in node['data'] and node['data']['fastcharge']:
+                    state['port_fast_charge'][index] = 1
+        return state
 
     def get_activate_devices(self):
         """get registered and activated devices"""
@@ -123,8 +144,9 @@ class Device():
 
     def device_update(self, msg):
         uid = msg['uid']
+        value = type_table[msg['endpoint']](msg['data']) if msg['endpoint'] in type_table else msg['data']
         if uid in self.uids:
-            self.uids[uid]['data'].update({msg['endpoint']:msg['data']})
-            self.db.insert_port_log(msg['endpoint'], msg['data'], uid)
+            self.uids[uid]['data'].update({msg['endpoint']:value})
+            self.db.insert_port_log(msg['endpoint'], value, uid)
         elif uid in self.unkown_uids_data:
-            self.unkown_uids_data[uid].update({msg['endpoint']:msg['data']})
+            self.unkown_uids_data[uid].update({msg['endpoint']:value})
