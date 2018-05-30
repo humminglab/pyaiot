@@ -47,10 +47,12 @@ try:
     from .powernode import PowerNode
     from .device import Device
     from .database import Database
+    from .setupdb import apply_init_setup
 except:
     from powernode import PowerNode
     from device import Device
     from database import Database
+    from setupdb import apply_init_setup
 
 POWER_MONITOR_INTERVAL = 3.0
 
@@ -81,6 +83,7 @@ class Manager(GatewayBase):
         if options.debug:
             logger.setLevel(logging.DEBUG)
 
+        apply_init_setup()
         self.db = Database()
         self.device = Device(self.db, options)
         self.power_node = Node(str(uuid.uuid4()))
