@@ -57,12 +57,11 @@ if __name__ == '__main__':
 
     setup(name=PACKAGE,
           version=get_version(PACKAGE),
-          description=('Provides tools for setting up a complete IoT '
-                       'dashboard using standards protocols.'),
+          description=('Pyaiot based IoT gateway that manages charging nodes'),
           long_description=readme('README.md'),
-          author='IoT-LAB Team',
-          author_email='admin@iot-lab.info',
-          url='http://www.iot-lab.info',
+          author='HummingLab',
+          author_email='yslee@humminglab.io',
+          url='http://www.humminglab.io',
           license='BSD',
           keywords="iot demonstration web coap mqtt",
           platforms='any',
@@ -75,13 +74,13 @@ if __name__ == '__main__':
                    pjoin('bin', 'aiot-dashboard'),
                    pjoin('bin', 'aiot-generate-keys')],
           install_requires=[
-            'tornado>=4.4.2',
+            'tornado>=5.0',
             'aiocoap>=0.3',
             'hbmqtt>=0.8',
-            'cryptography>=1.7.2'
+            # 'cryptography>=1.7.2'
           ],
           classifiers=[
-            'Development Status :: 4 - Beta',
+            'Development Status :: 3 - Alpha',
             'Programming Language :: Python :: 3 :: Only',
             'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
