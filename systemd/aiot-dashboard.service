@@ -13,7 +13,7 @@ Environment='STATIC_PATH=~/project/pyaiot/pyaiot/dashboard/static/' \
         'APP_FAVICON=' \
         'CAMERA_URL='
 
-ExecStart=/usr/local/bin/aiot-dashboard \
+ExecStart=/home/pi/.local/bin/aiot-dashboard \
         --static-path=${STATIC_PATH} \
         --web-port=${HTTP_PORT} \
         --broker-port=${BROKER_PORT} \

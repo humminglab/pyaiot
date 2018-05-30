@@ -7,7 +7,7 @@ User=pi
 Environment='BROKER_HOST=localhost' \
             'BROKER_PORT=8082'
 
-ExecStart=/usr/local/bin/aiot-mqtt-gateway \
+ExecStart=/home/pi/.local/bin/aiot-mqtt-gateway \
             --broker-host=${BROKER_HOST}   \
             --broker-port=${BROKER_PORT}
 

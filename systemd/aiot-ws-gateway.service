@@ -8,7 +8,7 @@ Environment='BROKER_HOST=localhost' \
             'BROKER_PORT=8082' \
             'GATEWAY_PORT=8083'
 
-ExecStart=/usr/local/bin/aiot-ws-gateway \
+ExecStart=/home/pi/.local/bin/aiot-ws-gateway \
             --broker-host=${BROKER_HOST} \
             --broker-port=${BROKER_PORT} \
             --gateway-port=${GATEWAY_PORT}
