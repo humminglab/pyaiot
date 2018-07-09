@@ -33,11 +33,13 @@ from datetime import datetime
 
 DEFAULT_DB_FILENAME = "{}/.pyaiot/pyaiot.db".format(os.path.expanduser("~"))
 
+
 def to_bitmap(array):
     l = []
     for i in array:
         l.append('1' if i else '0')
     return ''.join(l)
+
 
 def count_nonzero(array):
     count = 0
@@ -45,16 +47,19 @@ def count_nonzero(array):
         count += int(bool(i))
     return count
 
+
 def count_zero(array):
     count = 0
     for i in array:
         count += int(not i)
     return count
 
+
 def to_string(data):
     if type(data) == list or type(data) == tuple:
         return ','.join(str(int(x)) if type(x) is bool else str(x) for x in data)
     return data
+
 
 class Database():
     """Database for Bus Gateway"""
@@ -102,6 +107,8 @@ class Database():
 
     def insert_log(self, log):
         """Insert log into logs table"""
+        # FIXME: Not yet supported
+        return
         self.cursor.execute('INSERT INTO logs (timestamp, temperature, humidity, port_total, port_fault, port_charging, '
                             'port_fault_detail, port_charging_detail, system_fault, port_fast_charge_detail, power_on, '
                             'voltage_1, voltage_2, voltage_3, voltage_4, current_1, '
@@ -123,6 +130,8 @@ class Database():
 
     def insert_port_log(self, key, value, device_id):
         """Insert port log int dev_logs"""
+        # FIXME: Not yet supported
+        return
         self.cursor.execute('INSERT INTO dev_logs (timestamp, device_id, key, value) VALUES (?,?,?,?)',
                             (datetime.now().timestamp(), device_id, key, to_string(value)))
 
