@@ -73,9 +73,9 @@ class Device():
 
     def get_seat_state(self):
         state = dict(
-            port_fault = [1] * (self.total_seats),
-            port_charging = [0] * (self.total_seats),
-            port_fast_charge = [0] * (self.total_seats)
+            port_fault=[1] * self.total_seats,
+            port_charging=[0] * self.total_seats,
+            port_fast_charge=[0] * self.total_seats
         )
 
         for node in self.nodes:
