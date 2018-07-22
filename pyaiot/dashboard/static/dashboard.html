@@ -96,7 +96,7 @@ if (theme == 'dark') {
                         <ul class="dropdown-menu">
                             <li v-for="(resource, index) in resources">
                                 <a :href="'#resource'+index">
-                                    <div class="checkbox" style="display: inline; margin-right: 5px;" @click.stop @change="Vue.nextTick(refresh_layout)">
+                                    <div class="checkbox" style="display: inline; margin-right: 5px;" @click.stop @change="Vue.nextTick(refreshLayout)">
                                         <label>
                                             <input type="checkbox" v-model="resource.visible">
                                         </label>
