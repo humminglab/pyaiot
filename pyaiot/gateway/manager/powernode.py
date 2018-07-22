@@ -61,8 +61,9 @@ class UartNode(asyncio.Protocol):
                 raise OverflowError
 
             lines = buf.split(b'\r\n')
-            if len(lines) >= 3:
-                return lines[1].decode()
+            if len(lines) >= 2:
+                return lines[0].decode()
+
 
 class PowerNode():
     OVER_CURRENT_WARN = 1
@@ -85,27 +86,51 @@ class PowerNode():
         while not self.transport:
             await asyncio.sleep(0.1)
 
-    async def read(self):
+    async def read_power(self):
         async with self.lock:
-            resp = await self.protocol.command('read')
+            resp = await self.protocol.command('read_raw')
             d = [int(x) for x in resp.split(' ')]
-            data = dict(
-                temperature = d[0],
-                humidity = d[1],
-                group_power = [x for x in d[2:6]],
-                ap_power = d[6],
-                group_voltage = d[7:11],
-                group_current = d[11:15]
-            )
-            return data
+            volts = d[:4]
+            currents = d[4:8]
+            temperature = d[8]
+            humidity = d[9]
+            return volts, currents, temperature, humidity
+
+    async def read_port(self):
+        """read switch status
+
+        - result: current port status
+        - power_mask: True if force switch off by controller (by high current)
+        - user: status set by user
+        """
+        async with self.lock:
+            resp = await self.protocol.command('port')
+            d = [int(x) for x in resp.split(' ')]
+            power_mask = d[:5]
+            user = d[5:]
+            result = [1 if x[0] else x[1] for x in zip(power_mask, user)]
+            return result, power_mask, user
+
+    async def read(self):
+        volts, currents, temperature, humidity = await self.read_power()
+        ports, _, _ = await self.read_port()
+
+        data = dict(
+            temperature=temperature,
+            humidity=humidity,
+            group_power=ports[:4],
+            ap_power=ports[4],
+            group_voltage=volts,
+            group_current=currents
+        )
+        return data
 
     async def set_power(self, ports):
         async with self.lock:
             self.power_state = ports
             cmd_line = 'set ' + ' '.join(str(x) for x in ports)
             resp = await self.protocol.command(cmd_line)
-            data = [bool(int(x)) for x in resp.split(' ')]
-            return data
+            return resp
 
     def get_power(self):
         return self.power_state
