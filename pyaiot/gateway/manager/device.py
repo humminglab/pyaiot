@@ -28,6 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import logging
+import json
 
 logger = logging.getLogger("pyaiot.gw.device")
 
@@ -47,11 +48,12 @@ type_table = dict(
 )
 
 class Device():
-    def __init__(self, database, options):
+    def __init__(self, database, log, options):
         if options.debug:
             logger.setLevel(logging.DEBUG)
 
         self.db = database
+        self.log = log
         self.total_seats = int(self.db.get_conf('total_seats', 24))
         self.nodes = self.db.get_all_devices()
         for n in self.nodes:
@@ -113,14 +115,14 @@ class Device():
         data = {'active':True}
         if uid in self.uids:
             self.uids[uid].update(data)
-            self.db.insert_port_log('info', 'new seat {}'.format(self.uids[uid]['seat_number']), uid)
+            self.log.write_port_log(uid, json.dumps({'event': 'start', 'seat': self.uids[uid]['seat_number']}))
             return
         if uid in self.unkown_uids_data:
             self.unkown_uids_data[uid].update(data)
             return
 
         logger.debug('Create new device:{} in uids_unknown'.format(msg['uid']))
-        self.db.insert_port_log('info', 'new unknown device {}'.format(uid), 'other')
+        self.log.write_port_log(uid, json.dumps({'event': 'start', 'seat': 'unknown'}))
         self.unkown_uids_data.update({uid: data})
 
     def device_out(self, msg):
@@ -128,18 +130,18 @@ class Device():
         if uid in self.uids:
             logger.debug('Delete device:{} in udis'.format(uid))
             self.uids[uid].update({'active':False})
-            self.db.insert_port_log('info', 'out seat {}'.format(self.uids[uid]['seat_number']), uid)
+            self.log.write_port_log(uid, json.dumps({'event': 'start', 'seat': self.uids[uid]['seat_number']}))
         elif uid in self.unkown_uids_data[uid]:
             logger.debug('Delete device:{} in udis_unkonwn'.format(uid))
             del(self.unkown_uids_data[uid])
-            self.db.insert_port_log('info', 'out unknown device {}'.format(uid), 'other')
+            self.log.write_port_log(uid, json.dumps({'event': 'stop', 'seat': 'unknown'}))
 
     def device_reset(self, msg):
         logger.debug('Delete device:{} in udis_unkonwn'.format(msg['uid']))
         uid = msg['uid']
         if uid in self.uids:
             self.uids[uid].update({'active':True})
-            self.db.insert_port_log('info', 'reset seat {}'.format(self.uids[uid]['seat_number']), uid)
+            self.log.write_port_log(uid, json.dumps({'event': 'reset', 'seat': self.uids[uid]['seat_number']}))
             return
 
     def device_update(self, msg):
@@ -147,6 +149,6 @@ class Device():
         value = type_table[msg['endpoint']](msg['data']) if msg['endpoint'] in type_table else msg['data']
         if uid in self.uids:
             self.uids[uid]['data'].update({msg['endpoint']:value})
-            self.db.insert_port_log(msg['endpoint'], value, uid)
+            self.log.write_port_log(uid, json.dumps({'event': 'info', 'seat': self.uids[uid]['seat_number'], msg['endpoint']: value}))
         elif uid in self.unkown_uids_data:
             self.unkown_uids_data[uid].update({msg['endpoint']:value})

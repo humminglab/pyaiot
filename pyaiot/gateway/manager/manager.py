@@ -48,15 +48,19 @@ try:
     from .device import Device
     from .database import Database
     from .setupdb import apply_init_setup
+    from .log import Log
 except:
     from powernode import PowerNode
     from device import Device
     from database import Database
     from setupdb import apply_init_setup
+    from log import Log
+
 
 POWER_MONITOR_INTERVAL = 3.0
 
 logger = logging.getLogger("pyaiot.gw.manager")
+
 
 class Manager(GatewayBase):
     """Tornado based gateway application for manager
@@ -84,8 +88,9 @@ class Manager(GatewayBase):
             logger.setLevel(logging.DEBUG)
 
         apply_init_setup()
+        self.log = Log()
         self.db = Database()
-        self.device = Device(self.db, options)
+        self.device = Device(self.db, self.log, options)
         self.power_node = Node(str(uuid.uuid4()))
         self.power_device = None
         self.power_data = None
@@ -105,7 +110,7 @@ class Manager(GatewayBase):
                 break
             await asyncio.sleep(0.1)
 
-        self.db.insert_port_log('info', 'started manager', 'system')
+        self.log.write_port_log('system', json.dumps({'event': 'start'}))
 
         self.power_device = PowerNode()
         await self.power_device.wait_initialized()
@@ -131,7 +136,7 @@ class Manager(GatewayBase):
             power_on = self.power_device.get_power()[:-1],
         ))
         log.update(self.device.get_seat_state())
-        self.db.insert_log(log)
+        self.log.write_sys_log('info', json.dumps(log))
 
         loop = asyncio.get_event_loop()
         loop.call_later(self.SUMMARY_LOG_INTERVAL, self.summary_log)
@@ -141,7 +146,7 @@ class Manager(GatewayBase):
         self.add_node(self.power_node)
         for key, value in self.power_data.items():
             self.forward_data_from_node(self.power_node, key, value)
-            self.db.insert_port_log(key, value, 'power')
+            self.log.write_port_log('power', json.dumps({'event': 'start', key: value}))
 
     async def process_power_node(self):
         """Refresh power device state and forward data only modified"""
@@ -159,7 +164,7 @@ class Manager(GatewayBase):
                 if value != old_data[key]:
                     self.forward_data_from_node(self.power_node, key, value)
                 if enable_log:
-                    self.db.insert_port_log(key, value, 'power')
+                    self.log.write_port_log('power', json.dumps({'event': 'info', key: value}))
             await asyncio.sleep(POWER_MONITOR_INTERVAL)
 
     def on_client_message(self, message):
