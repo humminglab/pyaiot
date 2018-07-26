@@ -53,11 +53,6 @@ class BrokerWebsocketGatewayHandler(websocket.WebSocketHandler):
         self.set_nodelay(True)
         logger.info("New gateway websocket opened")
 
-        # Wait 2 seconds to get the gateway authentication token.
-        await asyncio.sleep(2)
-        if not self.authentified:
-            self.close()
-
     async def on_message(self, raw):
         """Triggered when a message is received from the broker child."""
         if not self.authentified:
