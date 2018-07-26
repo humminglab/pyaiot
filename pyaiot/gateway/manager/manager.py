@@ -78,7 +78,7 @@ class Manager(GatewayBase):
     """
     PROTOCOL = 'Manager'
     MIN_POWER_LOG_INTERVAL = 10.
-    SUMMARY_LOG_INTERVAL = 30.
+    SUMMARY_LOG_INTERVAL = 5.
 
     def __init__(self, keys, options):
         super().__init__(keys, options)
@@ -88,9 +88,9 @@ class Manager(GatewayBase):
             logger.setLevel(logging.DEBUG)
 
         apply_init_setup()
-        self.log = Log()
+        self.logfile = Log()
         self.db = Database()
-        self.device = Device(self.db, self.log, options)
+        self.device = Device(self.db, self.logfile, options)
         self.power_node = Node(str(uuid.uuid4()))
         self.power_device = None
         self.power_data = None
@@ -110,7 +110,7 @@ class Manager(GatewayBase):
                 break
             await asyncio.sleep(0.1)
 
-        self.log.write_port_log('system', json.dumps({'event': 'start'}))
+        self.logfile.write_port_log('system', json.dumps({'event': 'start'}))
 
         self.power_device = PowerNode()
         await self.power_device.wait_initialized()
@@ -136,7 +136,7 @@ class Manager(GatewayBase):
             power_on = self.power_device.get_power()[:-1],
         ))
         log.update(self.device.get_seat_state())
-        self.log.write_sys_log('info', json.dumps(log))
+        self.logfile.write_sys_log('info', json.dumps(log))
 
         loop = asyncio.get_event_loop()
         loop.call_later(self.SUMMARY_LOG_INTERVAL, self.summary_log)
@@ -146,7 +146,7 @@ class Manager(GatewayBase):
         self.add_node(self.power_node)
         for key, value in self.power_data.items():
             self.forward_data_from_node(self.power_node, key, value)
-            self.log.write_port_log('power', json.dumps({'event': 'start', key: value}))
+            self.logfile.write_port_log('power', json.dumps({'event': 'start', key: value}))
 
     async def process_power_node(self):
         """Refresh power device state and forward data only modified"""
@@ -164,7 +164,7 @@ class Manager(GatewayBase):
                 if value != old_data[key]:
                     self.forward_data_from_node(self.power_node, key, value)
                 if enable_log:
-                    self.log.write_port_log('power', json.dumps({'event': 'info', key: value}))
+                    self.logfile.write_port_log('power', json.dumps({'event': 'info', key: value}))
             await asyncio.sleep(POWER_MONITOR_INTERVAL)
 
     def on_client_message(self, message):
