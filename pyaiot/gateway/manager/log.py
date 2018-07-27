@@ -31,10 +31,15 @@
 
 import os
 import glob
+import logging
 import datetime
 
-LOG_BASE = "{}/.pyaiot/log".format(os.path.expanduser("~"))
+logger = logging.getLogger("pyaiot.manager.log")
 
+LOG_BASE = "{}/.pyaiot/log".format(os.path.expanduser("~"))
+MAX_QUOTA = 1*1024*1024*1024
+MAX_SYS_LOG_LINE = 2000
+MAX_PORT_LOG_LINE = 4000
 
 def log_time():
     now = datetime.datetime.now()
@@ -54,46 +59,90 @@ class Log():
         if not os.path.exists(LOG_BASE):
             os.makedirs(LOG_BASE)
 
+        self._fix_logs()
         self.new_log()
+
+    def _delete_zero_length_files(self, file_infos):
+        fout = []
+        for finfo in file_infos:
+            if finfo['stat'].st_size == 0:
+                os.unlink(finfo['name'])
+            else:
+                fout.append(finfo)
+        return fout
+
+    def _get_total_size(self, file_infos):
+        total = 0
+        for finfo in file_infos:
+            total += finfo['stat'].st_size
+        return total
+
+    def _delete_under_quota(self, total, file_infos):
+        while total > MAX_QUOTA and len(file_infos) > 0:
+            finfo = file_infos.pop(0)
+            total -= finfo['stat'].st_size
+            os.unlink(finfo['name'])
+        return total
+
+    def _fix_logs(self):
+        """delete file if zero length, and remove files if over quota"""
+        sys_logs = self.get_old_sys_logs()
+        port_logs = self.get_old_port_logs()
+        sys_logs = self._delete_zero_length_files(sys_logs)
+        port_logs = self._delete_zero_length_files(port_logs)
+
+        total = self._get_total_size(sys_logs)
+        total += self._get_total_size(port_logs)
+
+        # Sequential remove of old files
+        total = self._delete_under_quota(total, port_logs)
+        self._delete_under_quota(total, sys_logs)
 
     def new_log(self):
         """Create new logfile
 
         If opened file is empty, reuse it
         """
+        if self.sys_log_cnt == 0 and self.port_log_cnt == 0:
+            return
+
         now = datetime.datetime.now()
         now_str = now.strftime('%Y%m%d-%H%M%S')
 
-        if self.sys_log is None or self.sys_log_cnt > 0:
-            if self.sys_log:
-                self.sys_log.close()
-            self.sys_log_name = LOG_BASE + '/system-' + now_str + '.log'
-            self.sys_log = open(self.sys_log_name, 'w', 1)
-            self.sys_log_cnt = 0
+        if self.sys_log:
+            self.sys_log.close()
+        self.sys_log_name = LOG_BASE + '/system-' + now_str + '.log'
+        self.sys_log = open(self.sys_log_name, 'w', 1)
+        self.sys_log_cnt = 0
 
-        if self.port_log is None or self.port_log_cnt > 0:
-            if self.port_log:
-                self.port_log.close()
-            self.port_log_name = LOG_BASE + '/port-' + now_str + '.log'
-            self.port_log = open(self.port_log_name, 'w', 1)
-            self.port_log_cnt = 0
+        if self.port_log:
+            self.port_log.close()
+        self.port_log_name = LOG_BASE + '/port-' + now_str + '.log'
+        self.port_log = open(self.port_log_name, 'w', 1)
+        self.port_log_cnt = 0
 
-    def get_old_syslogs(self):
+    def get_old_sys_logs(self):
         """Get system log filenames except current one """
         files = glob.glob(LOG_BASE + '/system-*.log')
         files = filter(lambda f: f != self.sys_log_name, files)
-        return files
+        return [{'name':f, 'stat':os.stat(f)} for f in sorted(files)]
 
-    def get_old_portlogs(self):
+    def get_old_port_logs(self):
         """Get port log filenames except current one"""
         files = glob.glob(LOG_BASE + '/port-*.log')
         files = filter(lambda f: f != self.port_log_name, files)
-        return files
+        return [{'name':f, 'stat':os.stat(f)} for f in sorted(files)]
 
     def write_sys_log(self, log_type, log_str):
         self.sys_log_cnt += 1
         self.sys_log.write(log_time() + ' ' + log_type + ' ' + log_str + '\n')
 
+        if self.sys_log_cnt > MAX_SYS_LOG_LINE:
+            self.new_log()
+
     def write_port_log(self, log_type, log_str):
         self.port_log_cnt += 1
         self.port_log.write(log_time() + ' ' + log_type + ' ' + log_str + '\n')
+
+        if self.port_log_cnt > MAX_PORT_LOG_LINE:
+            self.new_log()
