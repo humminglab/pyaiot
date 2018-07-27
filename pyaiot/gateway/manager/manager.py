@@ -88,9 +88,9 @@ class Manager(GatewayBase):
             logger.setLevel(logging.DEBUG)
 
         self.logfile = Log()
-        self.sync = Sync(self.logfile)
-
         self.config = Config()
+        self.sync = Sync(self.logfile, self.config)
+
         self.device = Device(self.config, self.logfile, options)
         self.power_node = Node(str(uuid.uuid4()))
         self.power_device = None

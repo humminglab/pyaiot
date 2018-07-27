@@ -29,18 +29,26 @@
 
 """Sync with server"""
 
+import os
 import datetime
 import json
 import asyncio
 import logging
 import netifaces
+from tornado.httpclient import HTTPRequest, AsyncHTTPClient
 from pyroute2 import IPRoute
 from threading import Thread
+
+try:
+    from .config import DEFAULT_CONFIG_FILENAME
+except:
+    from config import DEFAULT_CONFIG_FILENAME
 
 logger = logging.getLogger("pyaiot.manager.sync")
 logger.setLevel(logging.DEBUG)
 
 WLAN = 'wlan0'
+MIN_REPORT_INTERVAL_SECS = (10 * 60)
 
 
 def pyroute_monitor(loop, sync):
@@ -59,16 +67,15 @@ def pyroute_monitor(loop, sync):
 
 
 class Sync():
-    def __init__(self, logfile):
+    def __init__(self, logfile, config):
         self.logfile = logfile
+        self.config = config
         self.last_update_time = datetime.datetime(1900, 1, 1)
         loop = asyncio.get_event_loop()
+        self.handle = loop.call_soon(self.trigger_upload)
 
         self.thread = Thread(target=pyroute_monitor, args=(loop, self))
         self.thread.start()
-
-        self.trigger_upload()
-
 
     def on_wlan_event(self, up, ip = None):
         logs = dict(up=up)
@@ -77,14 +84,62 @@ class Sync():
         self.logfile.write_port_log('wlan', json.dumps(logs))
 
         if up:
-            self.trigger_upload()
+            loop = asyncio.get_event_loop()
+            if self.handle:
+                self.handle.cancel()
+                self.handle = loop.call_soon(self.trigger_upload)
+
+    async def upload_file(self, filename, report_name=None):
+        report_name = report_name or os.path.basename(filename)
+        bus_id = self.config.get_bus_id()
+        timestamp = int(datetime.datetime.now().timestamp())
+        with open(filename) as f:
+            body = f.read()
+
+        http_client = AsyncHTTPClient()
+        req = HTTPRequest(
+            url='https://bus-node.humminglab.io/api/v1/bus/{}/timestamp/{}/log/{}'.format(bus_id, timestamp, report_name),
+            method='POST',
+            body=body)
+        try:
+            response = await http_client.fetch(req)
+        except Exception as e:
+            logging.error('Upload Error: %s' % e)
+            raise
+        else:
+            logging.info('Upload OK - %s' % os.path.basename(filename))
+
+    async def upload_files(self, file_infos):
+        now = datetime.datetime.now()
+        now_str = now.strftime('%Y%m%d-%H%M%S')
+        await self.upload_file(DEFAULT_CONFIG_FILENAME, 'config-{}.ini'.format(now_str))
+        for finfo in file_infos:
+            await self.upload_file(finfo['name'])
+            os.unlink(finfo['name'])
+
+    def gather_and_upload(self):
+        self.logfile.new_log()
+        file_infos = self.logfile.get_old_sys_logs()
+        file_infos.extend(self.logfile.get_old_port_logs())
+        asyncio.ensure_future(self.upload_files(file_infos))
 
     def trigger_upload(self):
+        loop = asyncio.get_event_loop()
+        self.handle = loop.call_later(MIN_REPORT_INTERVAL_SECS, self.trigger_upload)
+
         addrs = netifaces.ifaddresses(WLAN)
         if not netifaces.AF_INET in addrs:
             logger.info('Upload cancel: WiFi Disconnected')
             return
 
-        # check old files
-        now = datetime.datetime.now()
+        if not self.config.get_bus_id():
+            return
 
+        now = datetime.datetime.now()
+        delta = now - self.last_update_time
+
+        if delta.total_seconds() > MIN_REPORT_INTERVAL_SECS:
+            self.gather_and_upload()
+            self.last_update_time = datetime.datetime.now()
+            self.handle.cancel()
+            self.handle = loop.call_later(MIN_REPORT_INTERVAL_SECS, self.trigger_upload)
