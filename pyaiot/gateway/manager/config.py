@@ -44,6 +44,7 @@ class Config():
         self.config.read(DEFAULT_CONFIG_FILENAME)
 
         self.total_seats = self.config.getint('Config', 'total_seats', fallback=1)
+        self.bus_id = self.config.get('Config', 'bus_id', fallback='')
 
     def get_all_devices(self):
         """Get all device information"""
@@ -58,3 +59,6 @@ class Config():
 
     def get_total_seat(self):
         return self.total_seats
+
+    def get_bus_id(self):
+        return self.bus_id
