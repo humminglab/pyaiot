@@ -141,5 +141,3 @@ class Sync():
         if delta.total_seconds() > MIN_REPORT_INTERVAL_SECS:
             self.gather_and_upload()
             self.last_update_time = datetime.datetime.now()
-            self.handle.cancel()
-            self.handle = loop.call_later(MIN_REPORT_INTERVAL_SECS, self.trigger_upload)
