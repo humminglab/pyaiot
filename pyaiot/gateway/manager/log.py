@@ -62,7 +62,7 @@ class Log():
         If opened file is empty, reuse it
         """
         now = datetime.datetime.now()
-        now_str = now.strftime('%y%m%d%H%M%S')
+        now_str = now.strftime('%Y%m%d-%H%M%S')
 
         if self.sys_log is None or self.sys_log_cnt > 0:
             if self.sys_log:
