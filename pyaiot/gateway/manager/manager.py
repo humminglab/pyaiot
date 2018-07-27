@@ -78,7 +78,7 @@ class Manager(GatewayBase):
     """
     PROTOCOL = 'Manager'
     MIN_POWER_LOG_INTERVAL = 10.
-    SUMMARY_LOG_INTERVAL = 5.
+    SUMMARY_LOG_INTERVAL = 10.
 
     def __init__(self, keys, options):
         super().__init__(keys, options)
