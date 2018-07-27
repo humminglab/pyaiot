@@ -46,15 +46,15 @@ from pyaiot.common.messaging import check_broker_data, Message
 try:
     from .powernode import PowerNode
     from .device import Device
-    from .database import Database
-    from .setupdb import apply_init_setup
+    from .config import Config
     from .log import Log
+    from .sync import Sync
 except:
     from powernode import PowerNode
     from device import Device
     from database import Database
-    from setupdb import apply_init_setup
     from log import Log
+    from sync import Sync
 
 
 POWER_MONITOR_INTERVAL = 3.0
@@ -87,9 +87,10 @@ class Manager(GatewayBase):
         if options.debug:
             logger.setLevel(logging.DEBUG)
 
-        apply_init_setup()
         self.logfile = Log()
-        self.db = Database()
+        self.sync = Sync(self.logfile)
+
+        self.db = Config()
         self.device = Device(self.db, self.logfile, options)
         self.power_node = Node(str(uuid.uuid4()))
         self.power_device = None
