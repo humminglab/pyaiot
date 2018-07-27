@@ -33,9 +33,9 @@ import json
 logger = logging.getLogger("pyaiot.gw.device")
 
 try:
-    from .database import Database
+    from .config import Config
 except:
-    from database import Database
+    from config import Config
 
 
 type_table = dict(
@@ -48,14 +48,14 @@ type_table = dict(
 )
 
 class Device():
-    def __init__(self, database, logfile, options):
+    def __init__(self, config, logfile, options):
         if options.debug:
             logger.setLevel(logging.DEBUG)
 
-        self.db = database
+        self.config = config
         self.logfile = logfile
-        self.total_seats = int(self.db.get_conf('total_seats', 24))
-        self.nodes = self.db.get_all_devices()
+        self.total_seats = self.config.get_total_seat()
+        self.nodes = self.config.get_all_devices()
         for n in self.nodes:
             n.update({'data': {}, 'active': False})
             n['data'] = {}

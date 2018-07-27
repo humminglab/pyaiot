@@ -52,7 +52,7 @@ try:
 except:
     from powernode import PowerNode
     from device import Device
-    from database import Database
+    from config import Config
     from log import Log
     from sync import Sync
 
@@ -90,8 +90,8 @@ class Manager(GatewayBase):
         self.logfile = Log()
         self.sync = Sync(self.logfile)
 
-        self.db = Config()
-        self.device = Device(self.db, self.logfile, options)
+        self.config = Config()
+        self.device = Device(self.config, self.logfile, options)
         self.power_node = Node(str(uuid.uuid4()))
         self.power_device = None
         self.power_data = None
