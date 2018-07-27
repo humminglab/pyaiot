@@ -3,3 +3,5 @@ wheel
 aiocoap
 tornado
 pyserial-asyncio
+pyroute2
+netifaces
