@@ -112,10 +112,13 @@ class Sync():
     async def upload_files(self, file_infos):
         now = datetime.datetime.now()
         now_str = now.strftime('%Y%m%d-%H%M%S')
-        await self.upload_file(DEFAULT_CONFIG_FILENAME, 'config-{}.ini'.format(now_str))
-        for finfo in file_infos:
-            await self.upload_file(finfo['name'])
-            os.unlink(finfo['name'])
+        try:
+            await self.upload_file(DEFAULT_CONFIG_FILENAME, 'config-{}.ini'.format(now_str))
+            for finfo in file_infos:
+                await self.upload_file(finfo['name'])
+                os.unlink(finfo['name'])
+        except:
+            pass
 
     def gather_and_upload(self):
         self.logfile.new_log()
