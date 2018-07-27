@@ -39,7 +39,7 @@ logger = logging.getLogger("pyaiot.manager.log")
 LOG_BASE = "{}/.pyaiot/log".format(os.path.expanduser("~"))
 MAX_QUOTA = 1*1024*1024*1024
 MAX_SYS_LOG_LINE = 2000
-MAX_PORT_LOG_LINE = 4000
+MAX_PORT_LOG_LINE = 6000
 
 def log_time():
     now = datetime.datetime.now()
@@ -53,8 +53,8 @@ class Log():
         self.port_log_name = None
         self.sys_log = None
         self.port_log = None
-        self.sys_log_cnt = 0
-        self.port_log_cnt = 0
+        self.sys_log_cnt = MAX_SYS_LOG_LINE
+        self.port_log_cnt = MAX_PORT_LOG_LINE
 
         if not os.path.exists(LOG_BASE):
             os.makedirs(LOG_BASE)
