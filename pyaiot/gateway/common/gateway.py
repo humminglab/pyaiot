@@ -174,7 +174,7 @@ class GatewayBase(web.Application, GatewayBaseMixin, metaclass=ABCMeta):
         self.nodes = {}
         self.broker = None
         self.keys = keys
-        settings = {'debug': True}
+        settings = {'debug': False}
 
         # Create connection to broker
         asyncio.ensure_future(self.create_broker_connection(

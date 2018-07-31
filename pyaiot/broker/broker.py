@@ -123,7 +123,7 @@ class Broker(web.Application):
             (r"/ws", BrokerWebsocketClientHandler),
             (r"/gw", BrokerWebsocketGatewayHandler),
         ]
-        settings = {'debug': True}
+        settings = {'debug': False}
 
         super().__init__(handlers, **settings)
         logger.info('Application started, listening on port {}'

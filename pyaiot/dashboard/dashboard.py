@@ -155,7 +155,7 @@ class Dashboard(web.Application):
             (r'/org', DashboardOrgHandler),
             (r'/ws', WebsocketProxy)
         ]
-        settings = {'debug': True,
+        settings = {'debug': False,
                     "cookie_secret": "MY_COOKIE_ID",
                     "xsrf_cookies": False,
                     'static_path': options.static_path,
