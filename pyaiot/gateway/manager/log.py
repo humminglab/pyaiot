@@ -41,8 +41,8 @@ MAX_QUOTA = 1*1024*1024*1024
 MAX_SYS_LOG_LINE = 2000
 MAX_PORT_LOG_LINE = 6000
 
-def log_time():
-    now = datetime.datetime.now()
+
+def log_time(now):
     now_str = now.strftime('%Y-%m-%d %H:%M:%S')
     return now_str
 
@@ -55,6 +55,8 @@ class Log():
         self.port_log = None
         self.sys_log_cnt = MAX_SYS_LOG_LINE
         self.port_log_cnt = MAX_PORT_LOG_LINE
+        self.sys_log_last_time = None
+        self.port_log_last_time = None
 
         if not os.path.exists(LOG_BASE):
             os.makedirs(LOG_BASE)
@@ -114,12 +116,14 @@ class Log():
         self.sys_log_name = LOG_BASE + '/system-' + now_str + '.log'
         self.sys_log = open(self.sys_log_name, 'w', 1)
         self.sys_log_cnt = 0
+        self.sys_log_last_time = now
 
         if self.port_log:
             self.port_log.close()
         self.port_log_name = LOG_BASE + '/port-' + now_str + '.log'
         self.port_log = open(self.port_log_name, 'w', 1)
         self.port_log_cnt = 0
+        self.port_log_last_time = now
 
     def get_old_sys_logs(self):
         """Get system log filenames except current one """
@@ -134,15 +138,19 @@ class Log():
         return [{'name':f, 'stat':os.stat(f)} for f in sorted(files)]
 
     def write_sys_log(self, log_type, log_str):
-        self.sys_log_cnt += 1
-        self.sys_log.write(log_time() + ' ' + log_type + ' ' + log_str + '\n')
-
-        if self.sys_log_cnt > MAX_SYS_LOG_LINE:
+        now = datetime.datetime.now()
+        if self.sys_log_cnt > MAX_SYS_LOG_LINE or now.date() != self.sys_log_last_time.date():
             self.new_log()
+
+        self.sys_log_cnt += 1
+        self.sys_log.write(log_time(now) + ' ' + log_type + ' ' + log_str + '\n')
+
 
     def write_port_log(self, log_type, log_str):
-        self.port_log_cnt += 1
-        self.port_log.write(log_time() + ' ' + log_type + ' ' + log_str + '\n')
-
-        if self.port_log_cnt > MAX_PORT_LOG_LINE:
+        now = datetime.datetime.now()
+        if self.port_log_cnt > MAX_PORT_LOG_LINE and now.date() != self.port_log_last_time.date():
             self.new_log()
+
+        self.port_log_cnt += 1
+        self.port_log.write(log_time(now) + ' ' + log_type + ' ' + log_str + '\n')
+
