@@ -128,11 +128,11 @@ class Device():
     def device_out(self, msg):
         uid = msg['uid']
         if uid in self.uids:
-            logger.debug('Delete device:{} in udis'.format(uid))
+            logger.debug('Delete device:{} in uids'.format(uid))
             self.uids[uid].update({'active':False})
             self.logfile.write_port_log(uid, json.dumps({'event': 'start', 'seat': self.uids[uid]['seat_number']}))
         elif uid in self.unkown_uids_data[uid]:
-            logger.debug('Delete device:{} in udis_unkonwn'.format(uid))
+            logger.debug('Delete device:{} in uids_unkonwn'.format(uid))
             del(self.unkown_uids_data[uid])
             self.logfile.write_port_log(uid, json.dumps({'event': 'stop', 'seat': 'unknown'}))
 
