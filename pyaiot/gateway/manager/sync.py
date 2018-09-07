@@ -98,7 +98,7 @@ class Sync():
 
         http_client = AsyncHTTPClient()
         req = HTTPRequest(
-            url='https://bus-node.humminglab.io/api/v1/bus/{}/timestamp/{}/log/{}'.format(bus_id, timestamp, report_name),
+            url='https://bus.humminglab.io/api/v1/gw/{}/timestamp/{}/log/{}'.format(bus_id, timestamp, report_name),
             method='POST',
             body=body)
         try:
