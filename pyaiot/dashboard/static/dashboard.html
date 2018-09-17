@@ -122,21 +122,8 @@ if (theme == 'dark') {
             </div>
         </div>
     </div>
-    <div class="modal" id="upgradeModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                    <h2 class="modal-title">Upgrade Nodes</h2>
-                </div>
-                <div class="modal-body">
-                    <file-uploader></file-uploader>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
+    <div class="modal fade" id="upgradeModal" role="dialog">
+        <file-uploader></file-uploader>
     </div>
 
     <template v-if="nodes.length > 0 && nodes[0]">
@@ -280,24 +267,61 @@ if (theme == 'dark') {
 </div>
 
 
+<!--click.delegate="dismiss(true)" -->
+
 <script>
 <!-- Single file uploader -->
 Vue.component('file-uploader', {
-    template: '  <div class="container">' +
-    '    <div class="large-12 medium-12 small-12 cell">' +
-    '      <label>Firmware' +
-    '        <input type="file" id="file" ref="file" v-on:change="handleFileUpload()"/>' +
-    '      </label>' +
-    '      <button v-on:click="submitFile()">업그레이드</button>' +
+    template:
+    '<div class="modal-dialog modal-lg">' +
+    '  <div class="modal-content">\n' +
+    '    <div class="modal-header">\n' +
+    '      <button type="button" class="close" data-dismiss="modal" aria-hidden="true" @click="closeDialog">×</button>\n' +
+    '      <h2 class="modal-title">Upgrade Nodes</h2>\n' +
+    '    </div>\n' +
+    '    <div class="modal-body">\n' +
+    '      <div class="container">' +
+    '        <div class="alert alert-success alert-dismissible col-sm-9"' +
+    '                   :class="{\'alert-danger\': isAlert, \'alert-success\': !isAlert, \'hidden\': dismissed}">' +
+    '          <a href="#" class="close" data-dismiss="alert" aria-label="close" @click.stop.prevent="closeAlert">&times;</a>' +
+    '          {{! message }}' +
+    '        </div>' +
+    '      <div class="large-12 medium-12 small-12 cell" @hide="closeAlert">' +
+    '        <label>Firmware' +
+    '          <input type="file" id="file" ref="file" @change="handleFileUpload()"/>' +
+    '        </label>' +
+    '        <button @click="submitFile()">업그레이드</button>' +
+    '      </div>' +
     '    </div>' +
-    '  </div>',
+    '    </div>\n' +
+    '    <div class="modal-footer">\n' +
+    '       <button type="button" class="btn btn-default" data-dismiss="modal" @click="closeDialog">Close</button>\n' +
+    '    </div>\n' +
+    '  </div>\n' +
+    '</div>\n',
     data: function() {
-        return {file: ''}
+        return {
+            file: '',
+            alert: false,
+            message: '',
+        }
+    },
+    computed: {
+        isAlert() {
+            return this.alert
+        },
+        dismissed() {
+            return this.message ? false: true;
+        }
     },
     methods: {
         submitFile(){
+            let _this = this;
             let formData = new FormData();
             formData.append('file', this.file);
+            this.alert = false;
+            this.message = "전송중";
+
             axios.post( '/node_upgrade',
                 formData,
                 {
@@ -305,17 +329,24 @@ Vue.component('file-uploader', {
                         'Content-Type': 'multipart/form-data'
                     }
                 }
-            ).then(function(){
+            ).then(function(response){
                 console.log('SUCCESS!!');
                 sendData("update",
                     {"uid": vm.nodes[0].uid, "endpoint": "trigger_ota", "payload": ""})
-
-            }).catch(function(){
-                console.log('FAILURE!!');
+                _this.alert = false;
+                _this.message = "펌웨어 전송 성공";
+            }).catch(function(error){
+                _this.alert = true;
+                _this.message = "펌웨어 전송 실패 (" + error.response.status + " " + error.response.data.trim().split('\n').slice(-1)[0] + ")";
             });
         }, handleFileUpload(){
             this.file = this.$refs.file.files[0];
+        }, closeAlert() {
+            this.message = '';
+        }, closeDialog() {
+            this.message = '';
         }
+
     }
 })
 
