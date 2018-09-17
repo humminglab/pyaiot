@@ -65,12 +65,8 @@
 </head>
 <body>
 <script>
-var theme = localStorage.theme || 'dark';
 var total_seats = 28;
 
-if (theme == 'dark') {
-    document.body.classList.add('dark');
-}
 </script>
 
 <div id="app">
@@ -114,8 +110,8 @@ if (theme == 'dark') {
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li> <a data-toggle="modal" data-target="#upgradeModal" href="#">Node Upgrade</a> </li>
-                            <li> <a href="#">System Info</a> </li>
+                            <li> <a data-toggle="modal" data-target="#settingsModal" href="#">시스템 설정</a> </li>
+                            <li> <a data-toggle="modal" data-target="#upgradeModal" href="#">DSU-310 업그레이드</a> </li>
                         </ul>
                     </li>
                 </ul>
@@ -504,19 +500,6 @@ function sendData(type, data) {
 
 function refreshLayout() {
 }
-
-$('#selectTheme').change(function () {
-    if ($(this).val() == 'dark') {
-        $('body').addClass('dark')
-    } else {
-        $('body').removeClass('dark')
-    }
-})
-
-$('#settingsModal').on('hide.bs.modal', function (e) {
-    localStorage.setItem('theme', $('#selectTheme').val())
-});
-
 </script>
 
 </body>
