@@ -110,7 +110,7 @@ var total_seats = 28;
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li> <a data-toggle="modal" data-target="#settingsModal" href="#">시스템 설정</a> </li>
+                            <li> <a data-toggle="modal" data-target="#configModal" href="#">설정 정보 업데이트</a> </li>
                             <li> <a data-toggle="modal" data-target="#upgradeModal" href="#">DSU-310 업그레이드</a> </li>
                         </ul>
                     </li>
@@ -118,8 +118,11 @@ var total_seats = 28;
             </div>
         </div>
     </div>
+    <div class="modal fade" id="configModal" role="dialog">
+        <file-uploader title="설정 정보 업데이트" url="/config_update"></file-uploader>
+    </div>
     <div class="modal fade" id="upgradeModal" role="dialog">
-        <file-uploader></file-uploader>
+        <file-uploader title="DSU-310 업그레이드" url="/node_upgrade"></file-uploader>
     </div>
 
     <template v-if="nodes.length > 0 && nodes[0]">
@@ -273,7 +276,7 @@ Vue.component('file-uploader', {
     '  <div class="modal-content">\n' +
     '    <div class="modal-header">\n' +
     '      <button type="button" class="close" data-dismiss="modal" aria-hidden="true" @click="closeDialog">×</button>\n' +
-    '      <h2 class="modal-title">Upgrade Nodes</h2>\n' +
+    '      <h2 class="modal-title">{{! title}}</h2>\n' +
     '    </div>\n' +
     '    <div class="modal-body">\n' +
     '      <div class="container">' +
@@ -283,10 +286,10 @@ Vue.component('file-uploader', {
     '          {{! message }}' +
     '        </div>' +
     '      <div class="large-12 medium-12 small-12 cell" @hide="closeAlert">' +
-    '        <label>Firmware' +
+    '        <label>파일' +
     '          <input type="file" id="file" ref="file" @change="handleFileUpload()"/>' +
     '        </label>' +
-    '        <button @click="submitFile()">업그레이드</button>' +
+    '        <button @click="submitFile()">전송</button>' +
     '      </div>' +
     '    </div>' +
     '    </div>\n' +
@@ -302,6 +305,7 @@ Vue.component('file-uploader', {
             message: '',
         }
     },
+    props: ['title', 'url'],
     computed: {
         isAlert() {
             return this.alert
@@ -318,7 +322,7 @@ Vue.component('file-uploader', {
             this.alert = false;
             this.message = "전송중";
 
-            axios.post( '/node_upgrade',
+            axios.post( this.url,
                 formData,
                 {
                     headers: {
@@ -330,10 +334,10 @@ Vue.component('file-uploader', {
                 sendData("update",
                     {"uid": vm.nodes[0].uid, "endpoint": "trigger_ota", "payload": ""})
                 _this.alert = false;
-                _this.message = "펌웨어 전송 성공";
+                _this.message = "전송 성공";
             }).catch(function(error){
                 _this.alert = true;
-                _this.message = "펌웨어 전송 실패 (" + error.response.status + " " + error.response.data.trim().split('\n').slice(-1)[0] + ")";
+                _this.message = "전송 실패 (" + error.response.status + " " + error.response.data.trim().split('\n').slice(-1)[0] + ")";
             });
         }, handleFileUpload(){
             this.file = this.$refs.file.files[0];
