@@ -5,3 +5,4 @@ tornado
 pyserial-asyncio
 pyroute2
 netifaces
+pycrypto
