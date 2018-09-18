@@ -36,6 +36,7 @@ DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config.ini'.format(os.path.expanduser('~')
 
 logger = logging.getLogger("pyaiot.manager.sync")
 
+
 class Config():
     """Database for Bus Gateway"""
     def __init__(self):

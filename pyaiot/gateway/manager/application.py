@@ -44,6 +44,7 @@ except:
 
 logger = logging.getLogger("pyaiot.gw.ws")
 
+
 def extra_args():
     """Parse command line arguments for Manager application."""
     if not hasattr(options, "static_path"):
@@ -53,6 +54,7 @@ def extra_args():
     if not hasattr(options, "web_port"):
         define("web_port", default=8080,
                help="Web application HTTP port")
+
 
 def run(arguments=[]):
     """Start the websocket gateway instance."""
