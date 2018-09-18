@@ -110,7 +110,9 @@ var total_seats = 28;
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
+                            <li> <a data-toggle="modal" data-target="#systemInfo" href="#" @click="getSystemInfo">시스템 정보</a> </li>
                             <li> <a data-toggle="modal" data-target="#configModal" href="#">설정 정보 업데이트</a> </li>
+                            <li> <a data-toggle="modal" data-target="#upgradeGWModal" href="#">DST-400 self 업그레이드</a> </li>
                             <li> <a data-toggle="modal" data-target="#upgradeModal" href="#">DSU-310 업그레이드</a> </li>
                         </ul>
                     </li>
@@ -118,8 +120,31 @@ var total_seats = 28;
             </div>
         </div>
     </div>
+    <div class="modal fade" id="systemInfo" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h2 class="modal-title">시스템 정보</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="jumbotron jumbotron-fluid">
+                        <div class="container">
+                            <pre class="lead" style="white-space: pre;"><small>{{! systemInfo }}</small></pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="configModal" role="dialog">
         <file-uploader title="설정 정보 업데이트" url="/config_update"></file-uploader>
+    </div>
+    <div class="modal fade" id="upgradeGWModal" role="dialog">
+        <file-uploader title="DST-400 self 업그레이드" url="/gateway_upgrade"></file-uploader>
     </div>
     <div class="modal fade" id="upgradeModal" role="dialog">
         <file-uploader title="DSU-310 업그레이드" url="/node_upgrade"></file-uploader>
@@ -213,7 +238,7 @@ var total_seats = 28;
                     <span v-if="seat_info[index+1]">{{! '-ABCDEFG'.charAt(seat_info[index+1].group_number) }}</span>
                 </th>
                 <th v-show="resources.device_id.visible">
-                    <span v-if="'uid' in node">{{! node.uid }}</span>
+                    <span v-if="'uid' in node">{{! node.uid}}</span>
                 </th>
                 <th v-show="resources.status.visible">
                     <span v-if="!node.uid" class="text-disabled">
@@ -283,7 +308,7 @@ Vue.component('file-uploader', {
     '        <div class="alert alert-success alert-dismissible col-sm-9"' +
     '                   :class="{\'alert-danger\': isAlert, \'alert-success\': !isAlert, \'hidden\': dismissed}">' +
     '          <a href="#" class="close" data-dismiss="alert" aria-label="close" @click.stop.prevent="closeAlert">&times;</a>' +
-    '          {{! message }}' +
+    '          <span style="white-space: pre;">{{! message }}</span>' +
     '        </div>' +
     '      <div class="large-12 medium-12 small-12 cell" @hide="closeAlert">' +
     '        <label>파일' +
@@ -334,7 +359,7 @@ Vue.component('file-uploader', {
                 sendData("update",
                     {"uid": vm.nodes[0].uid, "endpoint": "trigger_ota", "payload": ""})
                 _this.alert = false;
-                _this.message = "전송 성공";
+                _this.message = "전송 성공\n" + response.data;
             }).catch(function(error){
                 _this.alert = true;
                 _this.message = "전송 실패 (" + error.response.status + " " + error.response.data.trim().split('\n').slice(-1)[0] + ")";
@@ -346,7 +371,6 @@ Vue.component('file-uploader', {
         }, closeDialog() {
             this.message = '';
         }
-
     }
 })
 
@@ -373,11 +397,21 @@ var data = {
     nodes: [],
     unregs: {},
     seat_info: [],
+    systemInfo: ''
 };
 
 var vm = new Vue({
     el: '#app',
-    data: data
+    data: data,
+    methods: {
+        getSystemInfo() {
+            _this = this;
+            _this.systemInfo = '';
+            axios.get('/get_system_info').then(function(response) {
+                _this.systemInfo = response.data;
+            })
+        }
+    }
 });
 
 // initialize bootstrap material design

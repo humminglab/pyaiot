@@ -35,14 +35,19 @@ import os
 import os.path
 import sys
 import logging
-import hashlib, glob
+import glob
 import asyncio
+import tempfile
+import subprocess
 from tornado import web, websocket
 from tornado.options import define, options
 
 from pyaiot.common.helpers import start_application, parse_command_line
+from pyaiot.dashboard.configupdate import ConfigUpdate, GetSystemInfo
+from pyaiot.dashboard.decrypt import decrypt_file
 
 logger = logging.getLogger("pyaiot.dashboard")
+
 
 class DashboardHandler(web.RequestHandler):
     def get(self, path=None):
@@ -51,16 +56,6 @@ class DashboardHandler(web.RequestHandler):
                     logo_url=options.logo,
                     title=options.title)
 
-class DashboardOrgHandler(web.RequestHandler):
-    def get(self, path=None):
-        self.render("dashboard-org.html",
-                    wsproto="wss" if options.broker_ssl else "ws",
-                    wsserver="{}:{}".format(options.broker_host,
-                                            options.broker_port),
-                    camera_url=options.camera_url,
-                    favicon=options.favicon,
-                    logo_url=options.logo,
-                    title=options.title)
 
 class NodeUpgrade(web.RequestHandler):
     def post(self):
@@ -74,8 +69,10 @@ class NodeUpgrade(web.RequestHandler):
         """save uploaded new firmware into firmware folder and remove old firmware files
 
         Filename must be the following format.
-         - node-1.0.0.bin
+         - node-1.0.0.img
         """
+        data = decrypt_file(data)
+
         filename = os.path.basename(filename)
         name, ext = os.path.splitext(filename)
 
@@ -95,6 +92,20 @@ class NodeUpgrade(web.RequestHandler):
 
         with open('{}firmware/{}{}'.format(options.static_path, name, ext), 'wb') as f:
             f.write(data)
+
+
+class GatewayUpgrade(web.RequestHandler):
+    def post(self):
+        data = self.request.files['file'][0]['body']
+        filename = self.request.files['file'][0]['filename']
+
+        data = decrypt_file(data)
+        with tempfile.NamedTemporaryFile() as file:
+            file.file.write(data)
+            file.file.flush()
+            subprocess.call(['bash', file.name])
+        self.write('OK')
+
 
 class WebsocketProxy(websocket.WebSocketHandler):
     def __init__(self, application, request, **kwargs):
@@ -152,10 +163,12 @@ class Dashboard(web.Application):
         handlers = [
             (r'/', DashboardHandler),
             (r'/node_upgrade', NodeUpgrade),
-            (r'/org', DashboardOrgHandler),
+            (r'/gateway_upgrade', GatewayUpgrade),
+            (r'/config_update', ConfigUpdate),
+            (r'/get_system_info', GetSystemInfo),
             (r'/ws', WebsocketProxy)
         ]
-        settings = {'debug': False,
+        settings = {'debug': True,
                     "cookie_secret": "MY_COOKIE_ID",
                     "xsrf_cookies": False,
                     'static_path': options.static_path,
