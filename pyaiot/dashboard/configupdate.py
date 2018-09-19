@@ -134,15 +134,24 @@ class ConfigUpdate(web.RequestHandler):
 class GetSystemInfo(web.RequestHandler):
     def get(self):
         text = ''
-        text += '네트워크 설정\n'
+
+        config = configparser.ConfigParser()
+        config.read(DEFAULT_CONFIG_FILENAME)
+        text += '설정 정보\n'
+        try:
+            text += 'bus_id: {}\n'.format(config['Config']['bus_id'])
+        except:
+            pass
+
+        text += '\n네트워크 설정\n'
         r = subprocess.check_output(['nmcli', 'connection', 'show'])
         text += r.decode('utf-8')
 
-        text += '\n\n무선랜 정보\n'
+        text += '\n무선랜 정보\n'
         r = subprocess.check_output(['nmcli', 'device', 'wifi', 'list'])
         text += r.decode('utf-8')
 
-        text += '\n\n네트워크 정보\n'
+        text += '\n네트워크 정보\n'
         r = subprocess.check_output(['ifconfig', 'eth0'])
         text += r.decode('utf-8')
         r = subprocess.check_output(['ifconfig', 'wlan0'])
