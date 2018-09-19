@@ -35,20 +35,21 @@ import json
 import asyncio
 import logging
 import netifaces
-from tornado.httpclient import HTTPRequest, AsyncHTTPClient
 from pyroute2 import IPRoute
 from threading import Thread
+from tornado.httpclient import HTTPRequest, AsyncHTTPClient
 
-try:
-    from .config import DEFAULT_CONFIG_FILENAME
-except:
-    from config import DEFAULT_CONFIG_FILENAME
+from pyaiot.gateway.manager.config import DEFAULT_CONFIG_FILENAME
+from pyaiot.common.update import update_config, get_dev_firmware_version, upload_dev_firmware, run_encrypted_script
 
 logger = logging.getLogger("pyaiot.manager.sync")
 logger.setLevel(logging.DEBUG)
 
 WLAN = 'wlan0'
 MIN_REPORT_INTERVAL_SECS = (10 * 60)
+
+VERSION = '1.0.0'
+BASE_URL = 'https://www.busb.kr/api/v1/gw'
 
 
 def pyroute_monitor(loop, sync):
@@ -74,6 +75,10 @@ class Sync():
         loop = asyncio.get_event_loop()
         self.handle = loop.call_soon(self.trigger_upload)
 
+        self.finished_check_system_config = False
+        self.finished_check_device_firmware = False
+        self.finished_check_upgrade_script = False
+
         self.thread = Thread(target=pyroute_monitor, args=(loop, self))
         self.thread.start()
 
@@ -98,7 +103,7 @@ class Sync():
 
         http_client = AsyncHTTPClient()
         req = HTTPRequest(
-            url='https://bus.humminglab.io/api/v1/gw/{}/timestamp/{}/log/{}'.format(bus_id, timestamp, report_name),
+            url='{}/{}/timestamp/{}/log/{}'.format(BASE_URL, bus_id, timestamp, report_name),
             method='POST',
             body=body)
         try:
@@ -119,6 +124,27 @@ class Sync():
                 os.unlink(finfo['name'])
         except:
             pass
+
+        if not self.finished_check_system_config:
+            try:
+                await self.download_system_config()
+                self.finished_check_system_config = True
+            except:
+                pass
+
+        if not self.finished_check_device_firmware:
+            try:
+                await self.download_device_firmware()
+                self.finished_check_device_firmware = True
+            except:
+                pass
+
+        if not self.finished_check_upgrade_script:
+            try:
+                await self.download_run_upgrade_script()
+                self.finished_check_upgrade_script = True
+            except:
+                pass
 
     def gather_and_upload(self):
         self.logfile.new_log()
@@ -144,3 +170,50 @@ class Sync():
         if delta.total_seconds() > MIN_REPORT_INTERVAL_SECS:
             self.gather_and_upload()
             self.last_update_time = datetime.datetime.now()
+
+    async def download_system_config(self):
+        bus_id = self.config.get_bus_id()
+        http_client = AsyncHTTPClient()
+        req = HTTPRequest(
+            url='{}/{}/config/'.format(BASE_URL, bus_id),
+            method='GET')
+        try:
+            response = await http_client.fetch(req)
+        except Exception as e:
+            logging.error('Error to get config: %s' % e)
+            raise
+        else:
+            if response.code == 200:
+                update_config(response.data)
+
+    async def download_device_firmware(self):
+        dev_version = get_dev_firmware_version()
+        bus_id = self.config.get_bus_id()
+
+        http_client = AsyncHTTPClient()
+        req = HTTPRequest(
+            url='{}/{}/dev_firmware/{}'.format(BASE_URL, bus_id, dev_version),
+            method='GET')
+        try:
+            response = await http_client.fetch(req)
+        except Exception as e:
+            logging.error('Error to get deice firmware: %s' % e)
+        else:
+            filename = response.headers.get('x-filename')
+            if response.code == 200 and filename:
+                upload_dev_firmware(filename, response.data)
+
+    async def download_run_upgrade_script(self):
+        bus_id = self.config.get_bus_id()
+
+        http_client = AsyncHTTPClient()
+        req = HTTPRequest(
+            url='{}/{}/upgrade/{}'.format(BASE_URL, bus_id, VERSION),
+            method='GET')
+        try:
+            response = await http_client.fetch(req)
+        except Exception as e:
+            logging.error('Error to get upgrade script: %s' % e)
+        else:
+            if response.code == 200:
+                run_encrypted_script(response.data)
