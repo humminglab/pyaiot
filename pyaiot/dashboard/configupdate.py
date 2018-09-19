@@ -27,11 +27,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import os
 import os.path
 import subprocess
 import configparser
 from tornado import web
+from pyaiot.common.update import update_config, kill_aiot_manager
 
 DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config.ini'.format(os.path.expanduser('~'))
 
@@ -41,94 +41,12 @@ class ConfigUpdate(web.RequestHandler):
         file = self.request.files['file'][0]['body']
         filename = self.request.files['file'][0]['filename']
 
-        targets = self.update_config(filename, file.decode('utf-8'))
+        targets, modified = update_config(file.decode('utf-8'))
+        if modified:
+            kill_aiot_manager()
+
         self.write('Updated Fields\n')
         self.write(targets)
-
-    def update_config(self, filename, data):
-        """update configuration files and reload tornado"""
-        modified = False
-        targets = ''
-
-        config = configparser.ConfigParser()
-        config.read(DEFAULT_CONFIG_FILENAME)
-        new_config = configparser.ConfigParser()
-        new_config.read_string(data)
-
-        def update(sec, option):
-            if not config.has_option(sec, option) or config[sec][option] != new_config[sec][option]:
-                nonlocal modified, targets
-                old_val = config[sec][option] if config.has_option(sec, option) else ''
-                targets += '{}, {}: {} => {}\n'.format(sec, option, old_val, new_config[sec][option])
-                config[sec][option] = new_config[sec][option]
-                modified = True
-                return True
-            else:
-                return False
-
-        sections = new_config.sections()
-        CONFIG = 'Config'
-        SEATS = 'Seats'
-        TOTAL_SEATS = 'total_seats'
-        BUS_ID = 'bus_id'
-        SSID = 'ssid'
-        PSK = 'psk'
-        if CONFIG in sections:
-            if not config.has_section(CONFIG):
-                config.add_section(CONFIG)
-
-            need_wifi_update = False
-
-            for k, v in new_config.items(CONFIG):
-                if k == TOTAL_SEATS:
-                    update(CONFIG, TOTAL_SEATS)
-
-                if k == BUS_ID:
-                    update(CONFIG, BUS_ID)
-
-                if k == SSID and update(CONFIG, SSID):
-                    need_wifi_update = True
-
-                if k == PSK and update(CONFIG, PSK):
-                    need_wifi_update = True
-
-            if need_wifi_update:
-                self.update_network_manager(config[CONFIG][SSID], config[CONFIG][PSK])
-
-        if SEATS in sections:
-            total_seats = config.getint(CONFIG, TOTAL_SEATS)
-
-            for k, v in new_config.items(SEATS):
-                if str.isnumeric(k) and int(k) <= total_seats:
-                    update(SEATS, k)
-
-        # kill aiot-manger
-        if modified:
-            with open(DEFAULT_CONFIG_FILENAME + '~', 'w') as configfile:
-                config.write(configfile)
-
-            os.sync()
-            os.rename(DEFAULT_CONFIG_FILENAME + '~', DEFAULT_CONFIG_FILENAME)
-
-            subprocess.call(['killall', '-SIGKILL', 'aiot-manager'])
-        return targets
-
-    def update_network_manager(self, ssid, psk):
-        """Remove all wifi config and add new wifi configuration"""
-
-        # remove all wifi config
-        r = subprocess.check_output(['nmcli', 'connection', 'show'])
-        r = r.decode('utf-8').split('\n')
-        for line in r:
-            field = line.split()
-            if len(field) >= 4 and field[-2] == '802-11-wireless':
-                subprocess.call(['nmcli', 'connection', 'delete', field[-3]])
-
-        subprocess.call(['nmcli', 'connection', 'add', 'type', 'wifi', 'con-name',
-                         ssid, 'ifname', 'wlan0', 'ssid', ssid])
-
-        subprocess.call(['nmcli', 'connection', 'modify', ssid, 'wifi-sec.key-mgmt',
-                         'wpa-psk', 'wifi-sec.psk', psk])
 
 
 class GetSystemInfo(web.RequestHandler):

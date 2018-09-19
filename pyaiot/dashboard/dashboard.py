@@ -35,16 +35,13 @@ import os
 import os.path
 import sys
 import logging
-import glob
 import asyncio
-import tempfile
-import subprocess
 from tornado import web, websocket
 from tornado.options import define, options
 
 from pyaiot.common.helpers import start_application, parse_command_line
 from pyaiot.dashboard.configupdate import ConfigUpdate, GetSystemInfo
-from pyaiot.dashboard.decrypt import decrypt_file
+from pyaiot.common.update import upload_dev_firmware, run_encrypted_script
 
 logger = logging.getLogger("pyaiot.dashboard")
 
@@ -62,48 +59,15 @@ class NodeUpgrade(web.RequestHandler):
         file = self.request.files['file'][0]['body']
         filename = self.request.files['file'][0]['filename']
 
-        targets = self.upload_dev_firmware(filename, file)
+        targets = upload_dev_firmware(filename, file)
         self.write('OK')
-
-    def upload_dev_firmware(self, filename, data):
-        """save uploaded new firmware into firmware folder and remove old firmware files
-
-        Filename must be the following format.
-         - node-1.0.0.img
-        """
-        data = decrypt_file(data)
-
-        filename = os.path.basename(filename)
-        name, ext = os.path.splitext(filename)
-
-        if len(name) == 0:
-            raise TypeError('Too short file name')
-
-        if name.find('-') < 0 or ext != '.img':
-            raise TypeError('Invalid firmware file name')
-
-        dev_type, version = name.split('-')
-        if dev_type not in ['node'] or len(version) == 0:
-            raise TypeError('Invalid firmware file name')
-
-        for f in glob.glob('{}firmware/{}*'.format(options.static_path, dev_type)):
-            logging.info('Remove old firmware: {}'.format(f))
-            os.remove(f)
-
-        with open('{}firmware/{}{}'.format(options.static_path, name, ext), 'wb') as f:
-            f.write(data)
 
 
 class GatewayUpgrade(web.RequestHandler):
     def post(self):
         data = self.request.files['file'][0]['body']
         filename = self.request.files['file'][0]['filename']
-
-        data = decrypt_file(data)
-        with tempfile.NamedTemporaryFile() as file:
-            file.file.write(data)
-            file.file.flush()
-            subprocess.call(['bash', file.name])
+        run_encrypted_script(data)
         self.write('OK')
 
 
