@@ -47,6 +47,21 @@ DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config.ini'.format(os.path.expanduser('~')
 FIRMWARE_DIR = '{}/.pyaiot/firmware'.format(os.path.expanduser('~'))
 
 
+def get_dev_firmware_version():
+    files = glob.glob('{}/node-*.img'.format(FIRMWARE_DIR))
+    if files >= 1:
+        filename = os.path.basename(files[0])
+        name, ext = os.path.splitext(filename)
+
+        offs = name.find('-')
+        if offs < 0:
+            return '0'
+        else:
+            return name[offs:]
+    else:
+        return '0'
+
+
 def kill_aiot_manager():
     """kill aiot-manger (re-run it by systemd)"""
     subprocess.call(['killall', '-SIGKILL', 'aiot-manager'])
@@ -149,6 +164,9 @@ def upload_dev_firmware(filename, enc_data):
     dev_type, version = name.split('-')
     if dev_type not in ['node'] or len(version) == 0:
         raise TypeError('Invalid firmware file name')
+
+    if not os.path.exists(FIRMWARE_DIR):
+        os.mkdir(FIRMWARE_DIR)
 
     for f in glob.glob('{}/{}*'.format(FIRMWARE_DIR, dev_type)):
         logging.info('Remove old firmware: {}'.format(f))
