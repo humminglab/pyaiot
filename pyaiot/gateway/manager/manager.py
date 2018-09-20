@@ -43,18 +43,11 @@ from tornado.options import options
 from pyaiot.gateway.common import GatewayBase, Node
 from pyaiot.common.messaging import check_broker_data, Message
 
-try:
-    from .powernode import PowerNode
-    from .device import Device
-    from .config import Config
-    from .log import Log
-    from .sync import Sync
-except:
-    from powernode import PowerNode
-    from device import Device
-    from config import Config
-    from log import Log
-    from sync import Sync
+from pyaiot.gateway.manager.powernode import PowerNode
+from pyaiot.gateway.manager.device import Device
+from pyaiot.gateway.manager.config import Config
+from pyaiot.gateway.manager.log import Log
+from pyaiot.gateway.manager.sync import Sync
 
 
 POWER_MONITOR_INTERVAL = 3.0

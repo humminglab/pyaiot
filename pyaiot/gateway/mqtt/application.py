@@ -36,8 +36,7 @@ from tornado.options import define, options
 
 from pyaiot.common.auth import check_key_file
 from pyaiot.common.helpers import start_application, parse_command_line
-
-from .gateway import MQTTGateway, MAX_TIME, MQTT_PORT, MQTT_HOST
+from pyaiot.gateway.mqtt.gateway import MQTTGateway, MAX_TIME, MQTT_PORT, MQTT_HOST
 
 logger = logging.getLogger("pyaiot.gw.mqtt")
 

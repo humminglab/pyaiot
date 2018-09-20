@@ -34,11 +34,7 @@ from tornado.options import options
 
 from pyaiot.common.auth import check_key_file
 from pyaiot.common.helpers import start_application, parse_command_line
-
-try:
-    from .broker import Broker, logger
-except:
-    from broker import Broker, logger
+from pyaiot.broker.broker import Broker, logger
 
 
 def run(arguments=[]):

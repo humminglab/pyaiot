@@ -35,8 +35,8 @@ from tornado.options import define, options
 
 from pyaiot.common.auth import check_key_file
 from pyaiot.common.helpers import start_application, parse_command_line
+from pyaiot.gateway.ws.gateway import WebsocketGateway
 
-from .gateway import WebsocketGateway
 
 logger = logging.getLogger("pyaiot.gw.ws")
 

@@ -36,11 +36,8 @@ from tornado.options import define, options
 
 from pyaiot.common.auth import check_key_file
 from pyaiot.common.helpers import start_application, parse_command_line
+from pyaiot.gateway.manager.manager import Manager
 
-try:
-    from .manager import Manager
-except:
-    from manager import Manager
 
 logger = logging.getLogger("pyaiot.gw.ws")
 

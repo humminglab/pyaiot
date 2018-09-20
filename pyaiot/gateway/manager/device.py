@@ -32,10 +32,7 @@ import json
 
 logger = logging.getLogger("pyaiot.gw.device")
 
-try:
-    from .config import Config
-except:
-    from config import Config
+from pyaiot.gateway.manager.config import Config
 
 
 type_table = dict(
