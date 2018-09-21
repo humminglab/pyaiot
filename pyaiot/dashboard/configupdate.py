@@ -75,4 +75,8 @@ class GetSystemInfo(web.RequestHandler):
         r = subprocess.check_output(['ifconfig', 'wlan0'])
         text += r.decode('utf-8')
 
+        text += '\n디스크 사용량\n'
+        r = subprocess.check_output(['df', '-h', '--type=ext4'])
+        text += r.decode('utf-8')
+
         self.write(text)
