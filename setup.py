@@ -77,7 +77,11 @@ if __name__ == '__main__':
             'tornado>=5.0',
             'aiocoap>=0.3',
             'hbmqtt>=0.8',
-            # 'cryptography>=1.7.2'
+            'cryptography>=2.2.2',
+            'pycrypto>=2.6.1',
+            'pyserial-asyncio',
+            'netifaces',
+            'pyroute2'
           ],
           classifiers=[
             'Development Status :: 3 - Alpha',
