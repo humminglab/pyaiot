@@ -41,7 +41,7 @@ from tornado import web, websocket
 from tornado.options import define, options
 
 from pyaiot.common.helpers import start_application, parse_command_line
-from pyaiot.dashboard.configupdate import ConfigUpdate, GetSystemInfo
+from pyaiot.dashboard.configupdate import ConfigUpdate, GetSystemInfo, GetConf
 from pyaiot.common.update import upload_dev_firmware, run_encrypted_script
 from pyaiot.common.version import VERSION
 
@@ -137,6 +137,7 @@ class Dashboard(web.Application):
             (r'/gateway_upgrade', GatewayUpgrade),
             (r'/config_update', ConfigUpdate),
             (r'/get_system_info', GetSystemInfo),
+            (r'/get_conf', GetConf),
             (r'/ws', WebsocketProxy)
         ]
         settings = {'debug': False,

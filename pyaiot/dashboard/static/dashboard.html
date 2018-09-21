@@ -117,6 +117,7 @@ var total_seats = 28;
                         </a>
                         <ul class="dropdown-menu">
                             <li> <a data-toggle="modal" data-target="#systemInfo" href="#" @click="getSystemInfo">시스템 정보</a> </li>
+                            <li> <a data-toggle="modal" data-target="#displayConf" href="#" @click="getConf">설정 정보 보기</a> </li>
                             <li> <a data-toggle="modal" data-target="#configModal" href="#">설정 정보 업데이트</a> </li>
                             <li> <a data-toggle="modal" data-target="#upgradeGWModal" href="#">DST-400 self 업그레이드</a> </li>
                             <li> <a data-toggle="modal" data-target="#upgradeModal" href="#">DSU-310 업그레이드</a> </li>
@@ -137,6 +138,26 @@ var total_seats = 28;
                     <div class="jumbotron jumbotron-fluid">
                         <div class="container">
                             <pre class="lead" style="white-space: pre;"><small>{{! systemInfo }}</small></pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="displayConf" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h2 class="modal-title">설정 정보 보기</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="jumbotron jumbotron-fluid">
+                        <div class="container">
+                            <pre class="lead" style="white-space: pre;"><small>{{! displayConf }}</small></pre>
                         </div>
                     </div>
                 </div>
@@ -401,7 +422,8 @@ var data = {
     nodes: [],
     unregs: {},
     seat_info: [],
-    systemInfo: ''
+    systemInfo: '',
+    displayConf: ''
 };
 
 var vm = new Vue({
@@ -413,6 +435,13 @@ var vm = new Vue({
             _this.systemInfo = '';
             axios.get('/get_system_info').then(function(response) {
                 _this.systemInfo = response.data;
+            })
+        },
+        getConf() {
+            _this = this;
+            _this.displayConf = '';
+            axios.get('/get_conf').then(function(response) {
+                _this.displayConf = response.data;
             })
         }
     }

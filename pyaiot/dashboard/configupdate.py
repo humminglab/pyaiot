@@ -80,3 +80,11 @@ class GetSystemInfo(web.RequestHandler):
         text += r.decode('utf-8')
 
         self.write(text)
+
+class GetConf(web.RequestHandler):
+    def get(self):
+        text = ''
+        with open(DEFAULT_CONFIG_FILENAME, 'r') as f:
+            text += f.read()
+
+        self.write(text)
