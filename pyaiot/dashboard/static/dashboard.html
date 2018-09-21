@@ -362,8 +362,6 @@ Vue.component('file-uploader', {
                 }
             ).then(function(response){
                 console.log('SUCCESS!!');
-                sendData("update",
-                    {"uid": vm.nodes[0].uid, "endpoint": "trigger_ota", "payload": ""})
                 _this.alert = false;
                 _this.message = "전송 성공\n" + response.data;
             }).catch(function(error){
