@@ -36,22 +36,29 @@ import os.path
 import sys
 import logging
 import asyncio
+import datetime
 from tornado import web, websocket
 from tornado.options import define, options
 
 from pyaiot.common.helpers import start_application, parse_command_line
 from pyaiot.dashboard.configupdate import ConfigUpdate, GetSystemInfo
 from pyaiot.common.update import upload_dev_firmware, run_encrypted_script
+from pyaiot.common.version import VERSION
 
 logger = logging.getLogger("pyaiot.dashboard")
 
 
 class DashboardHandler(web.RequestHandler):
     def get(self, path=None):
+        now = datetime.datetime.now()
+        current_time = now.strftime('%Y-%m-%d %H:%M:%S')
+
         self.render("dashboard.html",
                     favicon=options.favicon,
                     logo_url=options.logo,
-                    title=options.title)
+                    title=options.title,
+                    version=VERSION,
+                    current_time=current_time)
 
 
 class NodeUpgrade(web.RequestHandler):
