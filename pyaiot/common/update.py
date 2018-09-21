@@ -102,14 +102,16 @@ def update_config(data):
             if k == BUS_ID:
                 update(CONFIG, BUS_ID)
 
-            if k == SSID and update(CONFIG, SSID):
+            if k[:len(SSID)] == SSID and len(k) == len(SSID)+1:
+                update(CONFIG, k)
                 need_wifi_update = True
 
-            if k == PSK and update(CONFIG, PSK):
+            if k[:len(PSK)] == PSK and len(k) == len(PSK)+1:
+                update(CONFIG, k)
                 need_wifi_update = True
 
         if need_wifi_update:
-            update_network_manager(config[CONFIG][SSID], config[CONFIG][PSK])
+            update_network_manager(config[CONFIG])
 
     if SEATS in sections:
         total_seats = config.getint(CONFIG, TOTAL_SEATS)
@@ -126,7 +128,7 @@ def update_config(data):
     return targets, modified
 
 
-def update_network_manager(ssid, psk):
+def update_network_manager(config):
     """Remove all wifi config and add new wifi configuration"""
 
     # remove all wifi config
@@ -134,14 +136,20 @@ def update_network_manager(ssid, psk):
     r = r.decode('utf-8').split('\n')
     for line in r:
         field = line.split()
-        if len(field) >= 4 and field[-2] == '802-11-wireless':
+        if len(field) >= 4 and field[-2] == 'wifi':
             subprocess.call(['nmcli', 'connection', 'delete', field[-3]])
 
-    subprocess.call(['nmcli', 'connection', 'add', 'type', 'wifi', 'con-name',
-                     ssid, 'ifname', 'wlan0', 'ssid', ssid])
+    for i in range(1, 5):
+        ssid = '{}{}'.format(SSID, i)
+        psk = '{}{}'.format(PSK, i)
 
-    subprocess.call(['nmcli', 'connection', 'modify', ssid, 'wifi-sec.key-mgmt',
-                     'wpa-psk', 'wifi-sec.psk', psk])
+        if ssid in config and psk in config and len(config[ssid]) > 0:
+            subprocess.call(['nmcli', 'connection', 'add', 'type', 'wifi', 'con-name',
+                             config[ssid], 'ifname', 'wlan0', 'ssid', config[ssid]])
+
+            if len(config[psk]) > 0:
+                subprocess.call(['nmcli', 'connection', 'modify', config[ssid], 'wifi-sec.key-mgmt',
+                                 'wpa-psk', 'wifi-sec.psk', config[psk]])
 
 
 def upload_dev_firmware(filename, enc_data):
