@@ -37,4 +37,4 @@ echo 'Sync'
 sync
 
 echo 'Reboot'
-sudo reboot
+((sleep 5; sudo reboot)&)&
