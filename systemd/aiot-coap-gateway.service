@@ -4,6 +4,7 @@ After=network.target radvd.service aiot-broker.service
 
 [Service]
 User=pi
+Restart=always
 Environment='BROKER_HOST=localhost' \
             'BROKER_PORT=8082'
 
