@@ -35,6 +35,7 @@ import json
 import asyncio
 import logging
 import netifaces
+import subprocess
 from pyroute2 import IPRoute
 from threading import Thread
 from tornado.httpclient import HTTPRequest, AsyncHTTPClient
@@ -125,6 +126,10 @@ class Sync():
         except:
             pass
 
+        # update RTC
+        subprocess.call(['sudo', '/sbin/hwclock-i2c-mcp7941x', 'save'])
+
+        # check upgrade
         if not self.finished_check_system_config:
             try:
                 await self.download_system_config()
