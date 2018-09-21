@@ -148,8 +148,8 @@ def update_network_manager(config):
                              config[ssid], 'ifname', 'wlan0', 'ssid', config[ssid]])
 
             if len(config[psk]) > 0:
-                subprocess.call(['nmcli', 'connection', 'modify', config[ssid], 'ipv4.route-metric', 50])
-                subprocess.call(['nmcli', 'connection', 'modify', config[ssid], 'ipv6.route-metric', 50])
+                subprocess.call(['nmcli', 'connection', 'modify', config[ssid], 'ipv4.route-metric', "50"])
+                subprocess.call(['nmcli', 'connection', 'modify', config[ssid], 'ipv6.route-metric', "50"])
                 subprocess.call(['nmcli', 'connection', 'modify', config[ssid], 'wifi-sec.key-mgmt',
                                  'wpa-psk', 'wifi-sec.psk', config[psk]])
 
