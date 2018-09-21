@@ -61,10 +61,10 @@ def pyroute_monitor(loop, sync):
             for msg in msgs:
                 if msg['event'] == 'RTM_NEWADDR' and msg.get_attr('IFA_LABEL') == WLAN:
                     logger.info('WiFi Connected: {}'.format(msg.get_attr('IFA_ADDRESS')))
-                    loop.call_soon_threadsafe(sync.on_wlan_event(), True, msg.get_attr('IFA_ADDRESS'))
+                    loop.call_soon_threadsafe(sync.on_wlan_event, True, msg.get_attr('IFA_ADDRESS'))
                 elif msg['event'] == 'RTM_DELADDR' and msg.get_attr('IFA_LABEL') == WLAN:
                     logger.info('WiFi Disconnected')
-                    loop.call_soon_threadsafe(sync.on_wlan_event(), False)
+                    loop.call_soon_threadsafe(sync.on_wlan_event, False)
 
 
 class Sync():
