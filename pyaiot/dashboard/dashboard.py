@@ -74,7 +74,7 @@ class GatewayUpgrade(web.RequestHandler):
     def post(self):
         data = self.request.files['file'][0]['body']
         filename = self.request.files['file'][0]['filename']
-        run_encrypted_script(data)
+        self.write(run_encrypted_script(data))
         self.write('OK')
 
 

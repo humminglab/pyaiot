@@ -190,4 +190,6 @@ def run_encrypted_script(enc_data):
     with tempfile.NamedTemporaryFile() as file:
         file.file.write(data)
         file.file.flush()
-        subprocess.call(['bash', file.name])
+        r = subprocess.check_output(['bash', file.name])
+        return r.decode('utf-8')
+
