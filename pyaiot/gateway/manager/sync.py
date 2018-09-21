@@ -41,6 +41,7 @@ from tornado.httpclient import HTTPRequest, AsyncHTTPClient
 
 from pyaiot.gateway.manager.config import DEFAULT_CONFIG_FILENAME
 from pyaiot.common.update import update_config, get_dev_firmware_version, upload_dev_firmware, run_encrypted_script
+from pyaiot.common.version import VERSION
 
 logger = logging.getLogger("pyaiot.manager.sync")
 logger.setLevel(logging.DEBUG)
@@ -48,7 +49,6 @@ logger.setLevel(logging.DEBUG)
 WLAN = 'wlan0'
 MIN_REPORT_INTERVAL_SECS = (10 * 60)
 
-VERSION = '1.0.0'
 BASE_URL = 'https://www.busb.kr/api/v1/gw'
 
 
