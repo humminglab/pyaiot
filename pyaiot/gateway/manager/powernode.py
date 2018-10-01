@@ -94,7 +94,9 @@ class PowerNode():
             currents = d[4:8]
             temperature = d[8]
             humidity = d[9]
-            return volts, currents, temperature, humidity
+            in_volt = d[10]
+
+            return volts, currents, temperature, humidity, in_volt
 
     async def read_port(self):
         """read switch status
@@ -112,7 +114,7 @@ class PowerNode():
             return result, power_mask, user
 
     async def read(self):
-        volts, currents, temperature, humidity = await self.read_power()
+        volts, currents, temperature, humidity, in_volt = await self.read_power()
         ports, _, _ = await self.read_port()
 
         data = dict(
@@ -121,7 +123,8 @@ class PowerNode():
             group_power=ports[:4],
             ap_power=ports[4],
             group_voltage=volts,
-            group_current=currents
+            group_current=currents,
+            in_voltage=in_volt
         )
         return data
 

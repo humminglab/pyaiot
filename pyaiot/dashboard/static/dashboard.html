@@ -217,8 +217,9 @@ var total_seats = 28;
                         <div class="h5" v-show="resources.voltage_raw.visible">({{! voltage }})</div>
                     </th>
                     <th style="width: 10%">
-                        <!--<div class="h6 text-muted">평균</div>-->
-                        <!--<div class="h4">{{! ((nodes[0].data.group_voltage.reduce( ( p, c ) => p + parseFloat(c), 0 ) / nodes[0].data.group_voltage.length) / 112.).toFixed(1) }}</div>-->
+                        <div class="h6 text-muted">입력</div>
+                        <div class="h4">{{! (nodes[0].data.in_voltage/112.).toFixed(1) }}</div>
+                        <div class="h5" v-show="resources.voltage_raw.visible">({{! nodes[0].data.in_voltage }})</div>
                     </th>
                 </tr>
                 <tr>
