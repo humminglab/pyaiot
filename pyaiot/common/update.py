@@ -43,7 +43,7 @@ BUS_ID = 'bus_id'
 SSID = 'ssid'
 PSK = 'psk'
 
-DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config.ini'.format(os.path.expanduser('~'))
+DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config/config.ini'.format(os.path.expanduser('~'))
 FIRMWARE_DIR = '{}/.pyaiot/firmware'.format(os.path.expanduser('~'))
 
 

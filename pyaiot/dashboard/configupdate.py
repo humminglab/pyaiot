@@ -33,7 +33,7 @@ import configparser
 from tornado import web
 from pyaiot.common.update import update_config, kill_aiot_manager
 
-DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config.ini'.format(os.path.expanduser('~'))
+DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config/config.ini'.format(os.path.expanduser('~'))
 
 
 class ConfigUpdate(web.RequestHandler):
