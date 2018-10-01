@@ -69,12 +69,15 @@ def pyroute_monitor(loop, sync):
 
 
 class Sync():
-    def __init__(self, logfile, config):
+    def __init__(self, logfile, config, notify_event):
         self.logfile = logfile
         self.config = config
+        self.notify_event = notify_event
         self.last_update_time = datetime.datetime(1900, 1, 1)
         loop = asyncio.get_event_loop()
         self.handle = loop.call_soon(self.trigger_upload)
+
+        self.up = False
 
         self.finished_check_system_config = False
         self.finished_check_device_firmware = False
@@ -83,7 +86,7 @@ class Sync():
         self.thread = Thread(target=pyroute_monitor, args=(loop, self))
         self.thread.start()
 
-    def on_wlan_event(self, up, ip = None):
+    def on_wlan_event(self, up, ip=None):
         logs = dict(up=up)
         if ip:
             logs['ip'] = ip
@@ -94,6 +97,9 @@ class Sync():
             if self.handle:
                 self.handle.cancel()
                 self.handle = loop.call_soon(self.trigger_upload)
+
+        self.up = up
+        self.notify_event(connected=self.up, uploading=False)
 
     async def upload_file(self, filename, report_name=None):
         report_name = report_name or os.path.basename(filename)
@@ -118,6 +124,8 @@ class Sync():
     async def upload_files(self, file_infos):
         now = datetime.datetime.now()
         now_str = now.strftime('%Y%m%d-%H%M%S')
+
+        self.notify_event(connected=self.up, uploading=True)
         try:
             await self.upload_file(DEFAULT_CONFIG_FILENAME, 'config-{}.ini'.format(now_str))
             for finfo in file_infos:
@@ -150,6 +158,8 @@ class Sync():
                 self.finished_check_upgrade_script = True
             except:
                 pass
+
+        self.notify_event(connected=self.up, uploading=False)
 
     def gather_and_upload(self):
         self.logfile.new_log()

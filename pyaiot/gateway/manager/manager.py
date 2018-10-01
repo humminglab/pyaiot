@@ -82,7 +82,7 @@ class Manager(GatewayBase):
 
         self.logfile = Log()
         self.config = Config()
-        self.sync = Sync(self.logfile, self.config)
+        self.sync = Sync(self.logfile, self.config, self.notify_sync_event)
 
         self.device = Device(self.config, self.logfile, options)
         self.power_node = Node(str(uuid.uuid4()))
@@ -121,6 +121,18 @@ class Manager(GatewayBase):
         loop.call_later(self.SUMMARY_LOG_INTERVAL, self.summary_log)
         # blocking loop
         await self.process_power_node()
+
+    def notify_sync_event(self, connected=False, uploading=False):
+        color = '0'
+        blink = False
+
+        if connected:
+            color = 'G'
+            if uploading:
+                blink = True
+
+        asyncio.ensure_future(self.power_device.set_led(color, blink))
+
 
     def summary_log(self):
         log = self.power_data.copy()
