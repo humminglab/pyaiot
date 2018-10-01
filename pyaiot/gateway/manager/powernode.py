@@ -128,6 +128,17 @@ class PowerNode():
         )
         return data
 
+    async def set_led(self, color, blink):
+        """Set LED control
+
+        - color: '0' - off, 'G' - Green, 'R' - Red
+        - blink: False - normal, True - blink
+        """
+        async with self.lock:
+            cmd_line = 'led ' + color + ' ' + '1' if blink else '0'
+            resp = await self.protocol.command(cmd_line)
+            return resp
+
     async def set_power(self, ports):
         async with self.lock:
             self.power_state = ports
