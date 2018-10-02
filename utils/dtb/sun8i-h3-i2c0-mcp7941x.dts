@@ -1,0 +1,42 @@
+/*
+ * DTB overlay file for MCP7941x RTC
+ *
+ * Refer to https://phabricator.humminglab.io/T72
+ *
+ * ./dtc/dtc -W no-unit_address_vs_reg -@ -O dtb -I dts -o sun8i-h3-i2c0-mcp7941x.dtbo sun8i-h3-i2c0-mcp7941x.dts
+ *
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+  compatible = "xunlong,orangepi-zeroallwinner,sun8i-h2-plus";
+
+  /*
+   * Aliases can be used to set the external RTC as rtc0
+   * Needs supplying the correct path to the I2C controller RTC is connected to,
+   * this example is for I2C0 on H3
+   * NOTE: setting time at boot by the kernel
+   * may not work in some cases if the external RTC module is loaded too late
+   */
+  fragment@0 {
+    target-path = "/aliases";
+    __overlay__ {
+      rtc0 = "/soc/i2c@01c2ac00/mcp7941x@6f";
+    };
+  };
+
+  fragment@1 {
+    target = <&i2c0>;
+    __overlay__ {
+      #address-cells = <1>;
+      #size-cells = <0>;
+      mcp7941x@6f {
+        compatible = "microchip,mcp7941x";
+        reg = <0x6f>;
+        status = "okay";
+      };
+    };
+  };
+};
