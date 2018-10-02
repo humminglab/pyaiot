@@ -135,7 +135,8 @@ class PowerNode():
         - blink: False - normal, True - blink
         """
         async with self.lock:
-            cmd_line = 'led ' + color + ' ' + '1' if blink else '0'
+            cmd_line = 'led ' + color + ' '
+            cmd_line += '1' if blink else '0'
             resp = await self.protocol.command(cmd_line)
             return resp
 
