@@ -28,11 +28,17 @@ case "$1" in
 	    if [[ ! -d ${CONFIG_NORFLASH} ]]; then
 	        rm -rf ${CONFIG_NORFLASH}
 	        mkdir ${CONFIG_NORFLASH}
+	        if [[ -f /etc/default/pyaiot-default-config ]]; then
+	            cp /etc/default/pyaiot-default-config ${CONFIG_NORFLASH}/config.ini
+	        else
+	            touch ${CONFIG_NORFLASH}/config.ini
+	        fi
 	        chown -R pi.pi ${CONFIG_NORFLASH}
 	    fi
 
         if [[ ! -d ${PYAIOT_BASE} ]]; then
             mkdir ${PYAIOT_BASE}
+	        chown -R pi.pi ${PYAIOT_BASE}
         fi
 
         if [[ ! -h ${PYAIOT_CONFIG} ]]; then
