@@ -1,0 +1,16 @@
+# Symbolic link to pyaiot config directory
+
+[Unit]
+Description=Symlink to pyaiot config
+Before=basic.target
+After=sysinit.target local-fs.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/pyaiot/symlink-pyaiot-config-directory start
+TimeoutStartSec=6min
+
+[Install]
+WantedBy=basic.target
