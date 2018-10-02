@@ -80,6 +80,8 @@ def update_config(data):
     def update(sec, option):
         if not config.has_option(sec, option) or config[sec][option] != new_config[sec][option]:
             nonlocal modified, targets
+            if not config.has_section(sec):
+                config.add_section(sec)
             old_val = config[sec][option] if config.has_option(sec, option) else ''
             targets += '{}, {}: {} => {}\n'.format(sec, option, old_val, new_config[sec][option])
             config[sec][option] = new_config[sec][option]
