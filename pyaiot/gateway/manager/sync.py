@@ -83,7 +83,7 @@ class Sync():
         self.finished_check_device_firmware = False
         self.finished_check_upgrade_script = False
 
-        self.thread = Thread(target=pyroute_monitor, args=(loop, self))
+        self.thread = Thread(target=pyroute_monitor, args=(loop, self), daemon=True)
         self.thread.start()
 
     def on_wlan_event(self, up, ip=None):
