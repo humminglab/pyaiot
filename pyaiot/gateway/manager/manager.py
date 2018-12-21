@@ -131,7 +131,8 @@ class Manager(GatewayBase):
             if uploading:
                 blink = True
 
-        asyncio.ensure_future(self.power_device.set_led(color, blink))
+        if self.power_device:
+            asyncio.ensure_future(self.power_device.set_led(color, blink))
 
 
     def summary_log(self):
