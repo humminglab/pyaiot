@@ -86,6 +86,9 @@ class PowerNode():
         self.transport, self.protocol = \
             await serial_asyncio.create_serial_connection(loop, UartNode, '/dev/ttyS2', baudrate=115200)
 
+        # set default over current level 
+        await self.over_current(self.over_current_level)
+
     async def wait_initialized(self):
         while not self.transport:
             await asyncio.sleep(0.1)
