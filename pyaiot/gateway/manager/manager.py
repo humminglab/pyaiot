@@ -72,6 +72,7 @@ class Manager(GatewayBase):
     PROTOCOL = 'Manager'
     MIN_POWER_LOG_INTERVAL = 10.
     SUMMARY_LOG_INTERVAL = 10.
+    LOW_VOLTAGE_HOLD_TIME = 60
 
     def __init__(self, keys, options):
         super().__init__(keys, options)
@@ -91,6 +92,10 @@ class Manager(GatewayBase):
         self.websock = None
         self.client_uid = None
         self.last_power_log_time = None
+
+        self.low_voltage_start_time = None
+        self.low_voltage_state = False
+
         asyncio.ensure_future(self.coroutine_init())
 
     async def coroutine_init(self):
@@ -112,6 +117,7 @@ class Manager(GatewayBase):
 
         # power on
         await self.power_device.set_power([1, 1, 1, 1, 1])
+        await self.power_device.set_pled('G', 0)
 
         self.power_data = await self.power_device.read()
         self.last_power_log_time = datetime.now()
@@ -135,7 +141,6 @@ class Manager(GatewayBase):
         if self.power_device:
             asyncio.ensure_future(self.power_device.set_led(color, blink))
 
-
     def summary_log(self):
         log = self.power_data.copy()
         log.update(dict(
@@ -156,6 +161,32 @@ class Manager(GatewayBase):
             self.forward_data_from_node(self.power_node, key, value)
             self.logfile.write_port_log('power', json.dumps({'event': 'start', key: value}))
 
+    async def _check_power_condition(self):
+        """Check low power condition and power cut"""
+
+        # check low voltage condition
+        if self.low_voltage_state:
+            if PowerNode.is_good_voltage(self.power_data['in_voltage']):
+                await self.power_device.set_power_mask([0, 0, 0, 0, 0])
+                await self.power_device.set_power([1, 1, 1, 1, 1])
+                await self.power_device.set_pled('G', 0)
+                self.low_voltage_state = False
+                self.logfile.write_port_log('power', json.dumps({'event': 'normal_voltage'}))
+        else:
+            if PowerNode.is_lower_voltage(self.power_data['in_voltage']):
+                if self.low_voltage_start_time:
+                    if (datetime.now() - self.low_voltage_start_time).total_seconds() > self.LOW_VOLTAGE_HOLD_TIME:
+                        # power off by low power
+                        self.low_voltage_state = True
+                        self.low_voltage_start_time = None
+                        await self.power_device.set_power([0, 0, 0, 0, 0])
+                        await self.power_device.set_pled('R', 1)
+                        self.logfile.write_port_log('power', json.dumps({'event': 'low_voltage'}))
+                if self.low_voltage_start_time is None:
+                    self.low_voltage_start_time = datetime.now()
+            else:
+                self.low_voltage_start_time = None
+
     async def process_power_node(self):
         """Refresh power device state and forward data only modified"""
         while True:
@@ -173,6 +204,9 @@ class Manager(GatewayBase):
                     self.forward_data_from_node(self.power_node, key, value)
                 if enable_log:
                     self.logfile.write_port_log('power', json.dumps({'event': 'info', key: value}))
+
+            await self._check_power_condition()
+
             await asyncio.sleep(POWER_MONITOR_INTERVAL)
 
     def on_client_message(self, message):

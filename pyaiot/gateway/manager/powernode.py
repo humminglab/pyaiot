@@ -122,13 +122,13 @@ class PowerNode():
             resp = await self.protocol.command('port')
             d = [int(x) for x in resp.split(' ')]
             power_mask = d[:5]
-            user = d[5:]
-            result = [1 if x[0] else x[1] for x in zip(power_mask, user)]
-            return result, power_mask, user
+            power = d[5:]
+            result = [1 if x[0] else x[1] for x in zip(power_mask, power)]
+            return result, power_mask, power
 
     async def read(self):
         volts, currents, temperature, humidity, in_volt = await self.read_power()
-        ports, _, _ = await self.read_port()
+        ports, power_mask, power = await self.read_port()
 
         data = dict(
             temperature=temperature,
@@ -137,7 +137,9 @@ class PowerNode():
             ap_power=ports[4],
             group_voltage=volts,
             group_current=currents,
-            in_voltage=in_volt
+            in_voltage=in_volt,
+            power_mask=power_mask,
+            power=power
         )
         return data
 
@@ -209,12 +211,12 @@ class PowerNode():
         return float(adc) / CURRENT_SCALE
 
     @staticmethod
-    def is_lower_voltage(adcs):
-        return all((PowerNode.adc_to_volt(adc) < 21 for adc in adcs))
+    def is_lower_voltage(adc):
+        return PowerNode.adc_to_volt(adc) < 21
 
     @staticmethod
-    def is_good_voltage(adcs):
-        return any((PowerNode.adc_to_volt(adc) > 23 for adc in adcs))
+    def is_good_voltage(adc):
+        return PowerNode.adc_to_volt(adc) > 23
 
     @staticmethod
     def over_current(adcs):
