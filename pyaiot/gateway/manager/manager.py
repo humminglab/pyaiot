@@ -140,7 +140,7 @@ class Manager(GatewayBase):
         log.update(dict(
             system_fault = 0,
             # truncate ap power state
-            power_on = self.power_device.get_power()[:-1],
+            power_on = self.power_device.get_cached_power()[:-1],
         ))
         log.update(self.device.get_seat_state())
         self.logfile.write_sys_log('info', json.dumps(log))

@@ -33,6 +33,9 @@ import logging
 import asyncio
 import serial_asyncio
 
+CURRENT_SCALE = 260
+VOLTAGE_SCALE = 112
+
 logger = logging.getLogger("pyaiot.gw.powernode")
 
 
@@ -73,6 +76,7 @@ class PowerNode():
         self.transport = None
         self.protocol = None
         self.power_state = [0, 0, 0, 0, 0]
+        self.over_current_level = 9 * CURRENT_SCALE
         self.lock = asyncio.Lock()
 
         asyncio.ensure_future(self.coroutine_init())
@@ -87,6 +91,14 @@ class PowerNode():
             await asyncio.sleep(0.1)
 
     async def read_power(self):
+        """Read ADC level (voltage, current, temp, humi)
+
+        - volts: Group 1~4 voltage (ADC value)
+        - currents Group 1~4 current (ADC value)
+        - temperature: ADC value
+        - humidity: ADC value
+        - in_volt: input voltage (ADC value)
+        """
         async with self.lock:
             resp = await self.protocol.command('read_raw')
             d = [int(x) for x in resp.split(' ')]
@@ -103,7 +115,7 @@ class PowerNode():
 
         - result: current port status
         - power_mask: True if force switch off by controller (by high current)
-        - user: status set by user
+        - user: status set by user (self.set_power)
         """
         async with self.lock:
             resp = await self.protocol.command('port')
@@ -140,23 +152,60 @@ class PowerNode():
             resp = await self.protocol.command(cmd_line)
             return resp
 
+    async def set_pled(self, color, blink):
+        """Set Power Error LED control
+
+        - color: '0' - off, 'G' - Green, 'R' - Red
+        - blink: False - normal, True - blink
+        """
+        async with self.lock:
+            cmd_line = 'pled ' + color + ' '
+            cmd_line += '1' if blink else '0'
+            resp = await self.protocol.command(cmd_line)
+            return resp
+
     async def set_power(self, ports):
+        """Set Power on/off
+
+        :param ports: 5 elements array (G1~G4, AP)
+        """
         async with self.lock:
             self.power_state = ports
             cmd_line = 'set ' + ' '.join(str(x) for x in ports)
             resp = await self.protocol.command(cmd_line)
             return resp
 
-    def get_power(self):
+    async def set_power_mask(self, masks):
+        """Reset Overcurrent Mask
+
+        :param masks: 5 elemenets array (G1~G4, AP). 1 is power masked(OFF)
+        """
+        async with self.lock:
+            cmd_line = 'mask ' + ' '.join(str(x) for x in masks)
+            resp = await self.protocol.command(cmd_line)
+            return resp
+
+    async def set_over_current_level(self, level):
+        """Set new over current cut-off level
+
+        :param level: ADC level for current limit
+        """
+        self.over_current_level = level
+        async with self.lock:
+            cmd_line = 'over_current %d' % (self.over_current_level)
+            resp = await self.protocol.command(cmd_line)
+            return resp
+
+    def get_cached_power(self):
         return self.power_state
 
     @staticmethod
     def adc_to_volt(adc):
-        return adc / 112.
+        return float(adc) / VOLTAGE_SCALE
 
     @staticmethod
     def adc_to_current(adc):
-        return adc / 260.
+        return float(adc) / CURRENT_SCALE
 
     @staticmethod
     def is_lower_voltage(adcs):
