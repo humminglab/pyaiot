@@ -71,12 +71,13 @@ class UartNode(asyncio.Protocol):
 class PowerNode():
     OVER_CURRENT_WARN = 1
     OVER_CURRENT_ERROR = 2
+    DEF_OVER_CURRENT_LEVEL = 9 * CURRENT_SCALE
 
     def __init__(self):
         self.transport = None
         self.protocol = None
         self.power_state = [0, 0, 0, 0, 0]
-        self.over_current_level = 9 * CURRENT_SCALE
+        self.over_current_level = self.DEF_OVER_CURRENT_LEVEL
         self.lock = asyncio.Lock()
 
         asyncio.ensure_future(self.coroutine_init())
@@ -85,9 +86,6 @@ class PowerNode():
         loop = asyncio.get_event_loop()
         self.transport, self.protocol = \
             await serial_asyncio.create_serial_connection(loop, UartNode, '/dev/ttyS2', baudrate=115200)
-
-        # set default over current level 
-        await self.over_current(self.over_current_level)
 
     async def wait_initialized(self):
         while not self.transport:

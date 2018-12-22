@@ -108,6 +108,7 @@ class Manager(GatewayBase):
 
         self.power_device = PowerNode()
         await self.power_device.wait_initialized()
+        await self.power_device.set_over_current_level(self.power_device.DEF_OVER_CURRENT_LEVEL)
 
         # power on
         await self.power_device.set_power([1, 1, 1, 1, 1])
