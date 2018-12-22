@@ -1,6 +1,8 @@
 *.pyc
 *.pyo
 .eggs
+.idea
+venv/
 *.egg-info/
 .*.swp
 *~
