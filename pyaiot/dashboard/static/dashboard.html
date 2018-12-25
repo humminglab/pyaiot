@@ -258,6 +258,56 @@ var total_seats = 28;
             </tr>
             </thead>
             <tbody>
+            <tr v-for="(node, key) in unregs">
+                <th>
+                    <span class="text-warning">미등록</span>
+                </th>
+                <th v-show="resources.group.visible">
+                    -
+                </th>
+                <th v-show="resources.device_id.visible">
+                    <span> {{! key }} </span>
+                </th>
+                <th v-show="resources.status.visible">
+                    <span v-if="'fail' in node && node.fail != '0'" class="text-warning">
+                        <i class="fa fa-lg fa-warning"></i><span class="small">장애({{! node.fail }})</span>
+                    </span>
+                    <span v-else>
+                        <i class="fa fa-lg fa-wifi"></i>
+                    </span>
+
+                    <template v-if="'usb' in node && node.usb != '0'">
+                        <span v-if="'fastcharge' in node && node.fastcharge != '0'" class="text-primary">
+                            <i class="fa fa-lg fa-battery-3"></i>
+                        </span>
+                        <span v-else class="text-dark">
+                            <i class="fa fa-lg fa-battery-2"></i>
+                        </span>
+                    </template>
+                    <span v-else class="text-disabled">
+                            <i class="fa fa-lg fa-battery-0"></i>
+                    </span>
+                </th>
+                <th v-show="resources.voltage.visible">
+                    <span v-if="'voltage' in node">{{! (node.voltage / 190.).toFixed(1) }}</span>
+                </th>
+                <th v-show="resources.voltage_raw.visible">
+                    <span v-if="'voltage' in node">{{! node.voltage }}</span>
+                </th>
+                <th v-show="resources.current.visible">
+                    <span v-if="'current' in node">{{! (node.current/1220./2.304).toFixed(2) }}</span>
+                </th>
+                <th v-show="resources.current_raw.visible">
+                    <span v-if="'current' in node">{{! node.current }}</span>
+                </th>
+                <th v-show="resources.ip.visible">
+                    <span v-if="'ip' in node">{{! (node.ip).replace('::ffff:','') }}</span>
+                </th>
+                <th v-show="resources.version.visible">
+                    <span v-if="'version' in node">{{! node.version }}</span>
+                </th>
+
+            </tr>
             <tr v-for="(node, index) in nodes.slice(1)">
                 <th>
                     {{! index+1 }}
