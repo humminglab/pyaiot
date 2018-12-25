@@ -510,7 +510,7 @@ var ws = new WebSocket(url)
 
 ws.onopen = function() {
     console.log("WebSocket is ready")
-    sendData("new", "client")
+    sendNew()
 }
 ws.onmessage = function(event) {
     let msg = JSON.parse(event.data)
@@ -616,8 +616,14 @@ function receiveMessage(msg) {
     Vue.nextTick(refreshLayout)
 }
 
-function sendData(type, data) {
-    ws.send(JSON.stringify({"type": type, "data": data}))
+function sendNew() {
+    ws.send(JSON.stringify({"type": "new", "data": "client"}))
+}
+
+function sendUpdate(endpoint, payload) {
+    ws.send(JSON.stringify({"type": "update", "data": {
+        "uid": this.nodes[0].uid, "endpoint": endpoint, "payload": payload
+        }}))
 }
 
 function refreshLayout() {
