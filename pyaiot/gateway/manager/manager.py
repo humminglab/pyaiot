@@ -91,7 +91,6 @@ class Manager(GatewayBase):
         self.power_device = None
         self.power_data = None
         self.websock = None
-        self.client_uid = None
         self.last_power_log_time = None
 
         self.low_voltage_start_time = None
@@ -236,15 +235,6 @@ class Manager(GatewayBase):
         """Handle a message received from client to gateways"""
         super(Manager, self).on_broker_message(message)
         message = json.loads(message)
-
-        # get uid of itself
-        if not self.client_uid and message['type'] == 'new' and message['data'] == 'manager_client':
-            self.client_uid = message['src']
-            return
-
-        # from itself
-        if message['src'] == self.client_uid:
-            return
 
         if message['type'] == 'new':
             data = [dict(uid=self.power_node.uid, seat_number=0, group_number=0)]
