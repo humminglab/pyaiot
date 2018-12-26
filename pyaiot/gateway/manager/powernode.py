@@ -79,7 +79,7 @@ class PowerNode():
         self.power_state = [0, 0, 0, 0, 0]
         self.over_current_level = self.DEF_OVER_CURRENT_LEVEL
         self.lock = asyncio.Lock()
-
+        self.version = ''
         asyncio.ensure_future(self.coroutine_init())
 
     async def coroutine_init(self):
@@ -90,6 +90,10 @@ class PowerNode():
     async def wait_initialized(self):
         while not self.transport:
             await asyncio.sleep(0.1)
+
+        async with self.lock:
+            self.version = await self.protocol.command('version')
+
 
     async def read_power(self):
         """Read ADC level (voltage, current, temp, humi)

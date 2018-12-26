@@ -250,8 +250,8 @@ class Manager(GatewayBase):
             data += self.device.get_seat_info()
             logger.debug("Notify seat info to new client '{}'.".format(data))
             self.send_to_broker(Message.update_node(self.power_node.uid, "seat_info", data))
-        elif (message['type'] == "update" and
-              check_broker_data(message['data'])):
+            self.send_to_broker(Message.update_node(self.power_node.uid, "version", self.power_device.version))
+        elif message['type'] == "update" and check_broker_data(message['data']):
             data = message['data']
             # Received when a client update a node
             if data['uid'] != self.power_node.uid:
