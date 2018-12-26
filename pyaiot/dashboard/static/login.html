@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Login</title>
+
+    <!-- Material Design fonts -->
+    <!-- <link rel="stylesheet" type="text/css"
+          href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700"> -->
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/material-design-icons-iconfont/dist/material-design-icons.css') }}">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/bootstrap/dist/css/bootstrap.min.css') }}">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/font-awesome/css/font-awesome.min.css') }}">
+
+    <!-- Bootstrap Material Design -->
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/bootstrap-material-design/dist/css/bootstrap-material-design.min.css') }}">
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/bootstrap-material-design/dist/css/ripples.min.css') }}">
+
+    <!-- Dropdown.js -->
+    <!-- <link href="//cdn.rawgit.com/FezVrasta/dropdown.js/master/jquery.dropdown.css" rel="stylesheet"> -->
+    <link href="{{ static_url('css/jquery.dropdown.css') }}" rel="stylesheet">
+
+    <!-- Javascript modules -->
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/jquery/dist/jquery.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/bootstrap/dist/js/bootstrap.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/bootstrap-material-design/dist/js/material.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/bootstrap-material-design/dist/js/ripples.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/masonry-layout/dist/masonry.pkgd.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/smoothie/smoothie.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/vue/dist/vue.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/three/build/three.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/codemirror/lib/codemirror.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/codemirror/mode/javascript/javascript.js') }}"></script>
+
+    <!-- CodeMirror stylesheet -->
+    <link rel="stylesheet" href="{{ static_url('node_modules/codemirror/lib/codemirror.css') }}">
+
+    <!-- axios -->
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/axios/dist/axios.min.js') }}"></script>
+
+    <script src="{{ static_url('js/helpers.js') }}"></script>
+
+    <!-- Pyaiot dashboard css -->
+    <link rel="stylesheet" type="text/css" href="{{ static_url('css/dashboard.css') }}">
+</head>
+<body>
+<div id="app" class="container">
+    <div class="jumbotron">
+        <form action="/login" method="post">
+            <div class="form-group">
+                <label for="inputID">ID</label>
+                <input type="text" name="id" class="form-control" id="inputID" placeholder="ID를 입력하세요.">
+            </div>
+            <div class="form-group">
+                <label for="inputPassword">Password</label>
+                <input type="password" name="password" class="form-control" id="inputPassword" placeholder="비밀번호를 입력하세요.">
+            </div>
+            <div class="form-check">
+                <button type="submit" class="btn btn-primary" @submit="onSubmit">로그인</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

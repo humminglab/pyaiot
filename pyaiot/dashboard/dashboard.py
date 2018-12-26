@@ -37,6 +37,7 @@ import sys
 import logging
 import asyncio
 import datetime
+import configparser
 from tornado import web, websocket
 from tornado.options import define, options
 
@@ -47,8 +48,40 @@ from pyaiot.common.version import VERSION
 
 logger = logging.getLogger("pyaiot.dashboard")
 
+DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config/config.ini'.format(os.path.expanduser('~'))
 
-class DashboardHandler(web.RequestHandler):
+config = configparser.ConfigParser()
+config.read(DEFAULT_CONFIG_FILENAME)
+
+ID = config['Config']['id']
+PASSWORD = config['Config']['password']
+config = None
+cookie_auth = 'auth'
+
+class LoginHandler(web.RequestHandler):
+    def get(self):
+        self.clear_cookie(cookie_auth)
+        self.render("login.html")
+
+    def post(self):
+        id = self.get_argument('id', default='')
+        password = self.get_argument('password', default='')
+
+        self.clear_cookie(cookie_auth)
+        if id == ID and password == PASSWORD:
+            self.set_secure_cookie(cookie_auth, ID)
+            self.redirect('/')
+        else:
+            self.send_error(401)
+
+
+class RequestAuthHandler(web.RequestHandler):
+    def get_current_user(self):
+        return self.get_secure_cookie(cookie_auth)
+
+
+class DashboardHandler(RequestAuthHandler):
+    @web.authenticated
     def get(self, path=None):
         now = datetime.datetime.now()
         current_time = now.strftime('%Y-%m-%d %H:%M:%S')
@@ -61,7 +94,8 @@ class DashboardHandler(web.RequestHandler):
                     current_time=current_time)
 
 
-class NodeUpgrade(web.RequestHandler):
+class NodeUpgrade(RequestAuthHandler):
+    @web.authenticated
     def post(self):
         file = self.request.files['file'][0]['body']
         filename = self.request.files['file'][0]['filename']
@@ -70,7 +104,8 @@ class NodeUpgrade(web.RequestHandler):
         self.write('OK')
 
 
-class GatewayUpgrade(web.RequestHandler):
+class GatewayUpgrade(RequestAuthHandler):
+    @web.authenticated
     def post(self):
         data = self.request.files['file'][0]['body']
         filename = self.request.files['file'][0]['filename']
@@ -88,6 +123,10 @@ class WebsocketProxy(websocket.WebSocketHandler):
         return True
 
     async def open(self):
+        if not self.get_secure_cookie(cookie_auth):
+            self.close(code=1008)
+            return
+
         url = "{}://{}:{}/ws".format(
             "wss" if options.broker_ssl else "ws",
             options.broker_host,
@@ -133,6 +172,7 @@ class Dashboard(web.Application):
 
         handlers = [
             (r'/', DashboardHandler),
+            (r'/login', LoginHandler),
             (r'/node_upgrade', NodeUpgrade),
             (r'/gateway_upgrade', GatewayUpgrade),
             (r'/config_update', ConfigUpdate),
@@ -141,10 +181,11 @@ class Dashboard(web.Application):
             (r'/ws', WebsocketProxy)
         ]
         settings = {'debug': False,
-                    "cookie_secret": "MY_COOKIE_ID",
+                    "cookie_secret": PASSWORD,
                     "xsrf_cookies": False,
                     'static_path': options.static_path,
-                    'template_path': options.static_path
+                    'template_path': options.static_path,
+                    'login_url': '/login'
                     }
         super().__init__(handlers, **settings)
         logger.info('Application started, listening on port {0}'
