@@ -107,7 +107,7 @@ var total_seats = 28;
                     <li class="navbar-text">
                         본체:v{{ version }}
                     </li>
-                    <li v-if="nodes[0].data.version" class="navbar-text">
+                    <li v-if="nodes[0] && nodes[0].data && nodes[0].data.version" class="navbar-text">
                         파워:v{{! nodes[0].data.version}}
                     </li>
                     <li class="navbar-text">
