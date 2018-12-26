@@ -48,6 +48,7 @@ from pyaiot.gateway.manager.device import Device
 from pyaiot.gateway.manager.config import Config
 from pyaiot.gateway.manager.log import Log
 from pyaiot.gateway.manager.sync import Sync
+from pyaiot.common.update import update_config, kill_aiot_manager
 
 
 POWER_MONITOR_INTERVAL = 3.0
@@ -259,9 +260,25 @@ class Manager(GatewayBase):
 
             if data['endpoint'] == 'trigger_ota':
                 self.broadcast_upgrade()
+            elif data['endpoint'] == 'remap':
+                self.remap_seat(data['payload'])
+                self.send_to_broker(Message.update_node(self.power_node.uid, "reload", "reload"))
         else:
             logger.debug("Invalid data received from broker '{}'."
                          .format(message['data']))
+
+    def remap_seat(self, payload):
+        group_table = ['', 'A', 'B', 'C', 'D']
+        ini = '[Seats]\n'
+        for i in range(1, self.config.get_total_seat()+1):
+            if str(i) in payload:
+                node = payload[str(i)]
+                ini += '%d = %s,%s\n' % (i, node['uid'], group_table[node['group_number']])
+            else:
+                ini += '%d = \n' % i
+
+        update_config(ini)
+        kill_aiot_manager()
 
     def md5(self, firmware_filename):
         """Calculate md5 sum of firmware"""

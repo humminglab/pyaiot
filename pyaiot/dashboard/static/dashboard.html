@@ -121,7 +121,7 @@ var total_seats = 28;
                         <ul class="dropdown-menu">
                             <li> <a data-toggle="modal" data-target="#systemInfo" href="#" @click="getSystemInfo">시스템 정보</a> </li>
                             <li> <a data-toggle="modal" data-target="#displayConf" href="#" @click="getConf">설정 정보 보기</a> </li>
-                            <li> <a href="#" @click="toggleRemapSeat"> {{! remapSeat ? '좌석 재배치 취소' : '좌석 재배치 모드' }} </a></li>
+                            <li> <a href="#" @click="toggleRemapSeat"> {{! remapSeat ? '좌석 재배치 취소' : '좌석 재배치' }} </a></li>
                             <li> <a data-toggle="modal" data-target="#configModal" href="#">설정 정보 업데이트</a> </li>
                             <li> <a data-toggle="modal" data-target="#upgradeGWModal" href="#">DST-400 self 업그레이드</a> </li>
                             <li> <a data-toggle="modal" data-target="#upgradeModal" href="#">DSU-310 업그레이드</a> </li>
@@ -247,7 +247,7 @@ var total_seats = 28;
     </template>
 
     <div class="container">
-        <button v-if="remapSeat" type="button" class="btn btn-lg btn-danger" :disabled="!canUpdate">변경 적용</button>
+        <button v-if="remapSeat" type="button" class="btn btn-lg btn-danger" :disabled="!canUpdate" @click="doRemapSeat">변경 적용</button>
         <table class="table table-responsive">
             <thead>
             <tr>
@@ -590,6 +590,16 @@ var vm = new Vue({
         },
         toggleRemapSeat() {
             this.remapSeat = !this.remapSeat
+        },
+        doRemapSeat() {
+            seat = {}
+            for (let uid in this.remapTable) {
+                node = this.remapTable[uid]
+                if (node.seat_number <= 0)
+                    continue
+                seat[node.seat_number] = {'uid': uid, 'group_number': node.group_number}
+            }
+            sendUpdate("remap", seat)
         }
     }
 });
@@ -706,6 +716,8 @@ function receiveMessage(msg) {
                 vm.seat_info = msg.data
                 rebuildNodes()
                 break
+            } else if (index == 0 && endpoint == 'reload') {
+                location.reload();
             }
 
             if (index != -1) {
@@ -738,7 +750,7 @@ function sendNew() {
 
 function sendUpdate(endpoint, payload) {
     ws.send(JSON.stringify({"type": "update", "data": {
-        "uid": this.nodes[0].uid, "endpoint": endpoint, "payload": payload
+        "uid": vm.nodes[0].uid, "endpoint": endpoint, "payload": payload
         }}))
 }
 
