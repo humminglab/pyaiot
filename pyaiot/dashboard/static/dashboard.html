@@ -80,7 +80,10 @@ var total_seats = 28;
                 </button>
                 {% if logo_url %}<img class="navbar-brand" src="{{ logo_url }}" style="margin-top: -3px">{% end %}
                 <a class="navbar-brand" href="javascript:void(0)"><i class="fa fa-lg fa-bus"></i> 버스충전시스템
-                    ({{! nodes.slice(1).reduce((acc, cur)=>acc + (cur.active ? 1 : 0), 0) }}/{{! (nodes.length-1) }}) </a>
+                    (
+                    <span v-if="seat_info.length">{{! nodes.slice(1).reduce((acc, cur)=>acc + (cur.active ? 1 : 0), 0) }}/{{! (nodes.length-1) }}</span>
+                    <span v-else>연결중...</span>
+                        ) </a>
             </div>
             <div class="navbar-collapse collapse navbar-inverse-collapse">
                 <ul class="nav navbar-nav">
@@ -607,6 +610,8 @@ var vm = new Vue({
 // initialize bootstrap material design
 $.material.init()
 
+newTimer = null
+
 var url;
 if (window.location.protocol == "http:")
     url = "ws://" + window.location.host + "/ws"
@@ -617,6 +622,9 @@ var ws = new WebSocket(url)
 ws.onopen = function() {
     console.log("WebSocket is ready")
     sendNew()
+
+    // resend if seat_inof is not received in specific time
+    newTimer = setInterval(sendNew, 2000)
 }
 ws.onmessage = function(event) {
     let msg = JSON.parse(event.data)
@@ -714,6 +722,10 @@ function receiveMessage(msg) {
             let endpoint = msg.endpoint.replace(/^\//g, '') // remove leading slash
             if (endpoint == 'seat_info') {
                 vm.seat_info = msg.data
+                if (newTimer) {
+                    clearInterval(newTimer)
+                    newTimer = null
+                }
                 rebuildNodes()
                 break
             } else if (index == 0 && endpoint == 'reload') {
