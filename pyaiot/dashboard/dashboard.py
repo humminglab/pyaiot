@@ -33,6 +33,8 @@
 
 import os
 import os.path
+import random
+import string
 import sys
 import logging
 import asyncio
@@ -53,10 +55,11 @@ DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config/config.ini'.format(os.path.expandus
 config = configparser.ConfigParser()
 config.read(DEFAULT_CONFIG_FILENAME)
 
-ID = config['Config']['id']
-PASSWORD = config['Config']['password']
+ID = config['Config']['id'] if config.has_option('Config', 'id') else ''
+PASSWORD = config['Config']['password'] if config.has_option('Config', 'password') else ''
 config = None
 cookie_auth = 'auth'
+
 
 class LoginHandler(web.RequestHandler):
     def get(self):
@@ -69,7 +72,8 @@ class LoginHandler(web.RequestHandler):
 
         self.clear_cookie(cookie_auth)
         if id == ID and password == PASSWORD:
-            self.set_secure_cookie(cookie_auth, ID)
+            # secure cookie with random string
+            self.set_secure_cookie(cookie_auth, ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)))
             self.redirect('/')
         else:
             self.send_error(401)
