@@ -55,8 +55,8 @@ DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config/config.ini'.format(os.path.expandus
 config = configparser.ConfigParser()
 config.read(DEFAULT_CONFIG_FILENAME)
 
-ID = config['Config']['id'] if config.has_option('Config', 'id') else ''
-PASSWORD = config['Config']['password'] if config.has_option('Config', 'password') else ''
+ID = config['Config']['id'] if config.has_option('Config', 'id') else 'empty'
+PASSWORD = config['Config']['password'] if config.has_option('Config', 'password') else 'empty!@#'
 config = None
 cookie_auth = 'auth'
 
