@@ -48,13 +48,12 @@ from pyaiot.gateway.manager.device import Device
 from pyaiot.gateway.manager.config import Config
 from pyaiot.gateway.manager.log import Log
 from pyaiot.gateway.manager.sync import Sync
-from pyaiot.common.update import update_config, kill_aiot_manager
+from pyaiot.common.update import update_config, kill_aiot_manager, update_network_manager
 
 
 POWER_MONITOR_INTERVAL = 3.0
 
 logger = logging.getLogger("pyaiot.gw.manager")
-
 
 class Manager(GatewayBase):
     """Tornado based gateway application for manager
@@ -70,6 +69,7 @@ class Manager(GatewayBase):
     - client role (on_client_message)
        - receive all device events, save it into self.device, save log
     """
+    CONFIG = 'Config'
     PROTOCOL = 'Manager'
     MIN_POWER_LOG_INTERVAL = 10.
     SUMMARY_LOG_INTERVAL = 10.
@@ -96,6 +96,7 @@ class Manager(GatewayBase):
         self.low_voltage_start_time = None
         self.low_voltage_state = False
 
+        update_network_manager(self.config.config[self.CONFIG])
         asyncio.ensure_future(self.coroutine_init())
 
     async def coroutine_init(self):

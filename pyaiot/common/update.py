@@ -95,8 +95,6 @@ def update_config(data):
         if not config.has_section(CONFIG):
             config.add_section(CONFIG)
 
-        need_wifi_update = False
-
         for k, v in new_config.items(CONFIG):
             if k == TOTAL_SEATS:
                 update(CONFIG, TOTAL_SEATS)
@@ -106,14 +104,9 @@ def update_config(data):
 
             if k[:len(SSID)] == SSID and len(k) == len(SSID)+1:
                 update(CONFIG, k)
-                need_wifi_update = True
 
             if k[:len(PSK)] == PSK and len(k) == len(PSK)+1:
                 update(CONFIG, k)
-                need_wifi_update = True
-
-        if need_wifi_update:
-            update_network_manager(config[CONFIG])
 
     if SEATS in sections:
         total_seats = config.getint(CONFIG, TOTAL_SEATS)
