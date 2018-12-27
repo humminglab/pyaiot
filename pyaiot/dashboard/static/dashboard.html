@@ -556,8 +556,11 @@ var vm = new Vue({
             if (!modified) {
                 let len = this.seat_info.length;
 
-                for (i = 1; i < len && this.nodes[i].info; i++) {
+                for (i = 1; i < len; i++) {
                     let uid= this.nodes[i].uid
+                    if (!this.nodes[i].info)
+                        continue
+
                     if (this.nodes[i].info.seat_number != this.remapTable[uid].seat_number ||
                             this.nodes[i].info.group_number != this.remapTable[uid].group_number) {
                         modified = true
