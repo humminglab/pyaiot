@@ -96,17 +96,7 @@ def update_config(data):
             config.add_section(CONFIG)
 
         for k, v in new_config.items(CONFIG):
-            if k == TOTAL_SEATS:
-                update(CONFIG, TOTAL_SEATS)
-
-            if k == BUS_ID:
-                update(CONFIG, BUS_ID)
-
-            if k[:len(SSID)] == SSID and len(k) == len(SSID)+1:
-                update(CONFIG, k)
-
-            if k[:len(PSK)] == PSK and len(k) == len(PSK)+1:
-                update(CONFIG, k)
+            update(CONFIG, k)
 
     if SEATS in sections:
         total_seats = config.getint(CONFIG, TOTAL_SEATS)
