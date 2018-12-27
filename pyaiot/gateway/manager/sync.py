@@ -103,7 +103,7 @@ class Sync():
 
     async def upload_file(self, filename, report_name=None):
         report_name = report_name or os.path.basename(filename)
-        bus_id = self.config.get_bus_id()
+        bus_id = self.config['bus_id']
         timestamp = int(datetime.datetime.now().timestamp())
         with open(filename) as f:
             body = f.read()
@@ -173,7 +173,7 @@ class Sync():
             logger.info('Upload cancel: WiFi Disconnected')
             return
 
-        if not self.config.get_bus_id():
+        if not self.config['bus_id']:
             return
 
         now = datetime.datetime.now()
@@ -184,7 +184,7 @@ class Sync():
             self.last_update_time = datetime.datetime.now()
 
     async def download_system_config(self):
-        bus_id = self.config.get_bus_id()
+        bus_id = self.config['bus_id']
         http_client = AsyncHTTPClient()
         req = HTTPRequest(
             url='{}/{}/config/'.format(BASE_URL, bus_id),
@@ -200,7 +200,7 @@ class Sync():
 
     async def download_device_firmware(self):
         dev_version = get_dev_firmware_version()
-        bus_id = self.config.get_bus_id()
+        bus_id = self.config['bus_id']
 
         http_client = AsyncHTTPClient()
         req = HTTPRequest(
@@ -216,7 +216,7 @@ class Sync():
                 upload_dev_firmware(filename, response.data)
 
     async def download_run_upgrade_script(self):
-        bus_id = self.config.get_bus_id()
+        bus_id = self.config['bus_id']
 
         http_client = AsyncHTTPClient()
         req = HTTPRequest(

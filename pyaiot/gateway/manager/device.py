@@ -51,7 +51,7 @@ class Device():
 
         self.config = config
         self.logfile = logfile
-        self.total_seats = self.config.get_total_seat()
+        self.total_seats = self.config['total_seats']
         self.nodes = self.config.get_all_devices()
         for n in self.nodes:
             n.update({'data': {}, 'active': False})

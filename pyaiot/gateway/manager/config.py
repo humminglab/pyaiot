@@ -36,6 +36,8 @@ DEFAULT_CONFIG_FILENAME = '{}/.pyaiot/config/config.ini'.format(os.path.expandus
 
 logger = logging.getLogger("pyaiot.manager.sync")
 
+CONFIG = 'Config'
+SEATS = 'Seats'
 
 class Config():
     """Database for Bus Gateway"""
@@ -44,8 +46,15 @@ class Config():
         self.config = configparser.ConfigParser()
         self.config.read(DEFAULT_CONFIG_FILENAME)
 
-        self.total_seats = self.config.getint('Config', 'total_seats', fallback=1)
-        self.bus_id = self.config.get('Config', 'bus_id', fallback='')
+        self.total_seats = self.config.getint(CONFIG, 'total_seats', fallback=1)
+        self.bus_id = self.config.get(CONFIG, 'bus_id', fallback='')
+        self.voltage_scale = self.config.getfloat(CONFIG, 'voltage_scale', fallback=112.)
+        self.current_scale = self.config.getfloat(CONFIG, 'current_scale', fallback=260.)
+        self.over_current = self.config.getfloat(CONFIG, 'over_current', fallback=9.0)
+        self.warn_current = self.config.getfloat(CONFIG, 'warn_current', fallback=8.0)
+        self.low_voltage = self.config.getfloat(CONFIG, 'low_voltage', fallback=21.0)
+        self.normal_voltage = self.config.getfloat(CONFIG, 'normal_voltage', fallback=23.0)
+        self.low_voltage_hold_time = self.config.getint(CONFIG, 'low_voltage_hold_time', fallback=60)
 
     def get_all_devices(self):
         """Get all device information"""
@@ -58,8 +67,7 @@ class Config():
 
         return seats
 
-    def get_total_seat(self):
-        return self.total_seats
-
-    def get_bus_id(self):
-        return self.bus_id
+    def __getitem__(self, item):
+        if hasattr(self, item):
+            return getattr(self, item)
+        raise IndexError

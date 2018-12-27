@@ -73,7 +73,6 @@ class Manager(GatewayBase):
     PROTOCOL = 'Manager'
     MIN_POWER_LOG_INTERVAL = 10.
     SUMMARY_LOG_INTERVAL = 10.
-    LOW_VOLTAGE_HOLD_TIME = 60
 
     def __init__(self, keys, options):
         super().__init__(keys, options)
@@ -112,9 +111,8 @@ class Manager(GatewayBase):
 
         self.logfile.write_port_log('system', json.dumps({'event': 'start'}))
 
-        self.power_device = PowerNode()
+        self.power_device = PowerNode(self.config)
         await self.power_device.wait_initialized()
-        await self.power_device.set_over_current_level(self.power_device.DEF_OVER_CURRENT_LEVEL)
 
         # power on
         await self.power_device.set_power([1, 1, 1, 1, 1])
@@ -167,16 +165,16 @@ class Manager(GatewayBase):
 
         # check low voltage condition
         if self.low_voltage_state:
-            if PowerNode.is_good_voltage(self.power_data['in_voltage']):
+            if self.power_device.is_good_voltage(self.power_data['in_voltage']):
                 await self.power_device.set_power_mask([0, 0, 0, 0, 0])
                 await self.power_device.set_power([1, 1, 1, 1, 1])
                 await self.power_device.set_pled('G', 0)
                 self.low_voltage_state = False
                 self.logfile.write_port_log('power', json.dumps({'event': 'normal_voltage'}))
         else:
-            if PowerNode.is_lower_voltage(self.power_data['in_voltage']):
+            if self.power_device.is_lower_voltage(self.power_data['in_voltage']):
                 if self.low_voltage_start_time:
-                    if (datetime.now() - self.low_voltage_start_time).total_seconds() > self.LOW_VOLTAGE_HOLD_TIME:
+                    if (datetime.now() - self.low_voltage_start_time).total_seconds() > self.power_device.low_voltage_hold_time:
                         # power off by low power
                         self.low_voltage_state = True
                         self.low_voltage_start_time = None
@@ -261,7 +259,7 @@ class Manager(GatewayBase):
     def remap_seat(self, payload):
         group_table = ['', 'A', 'B', 'C', 'D']
         ini = '[Seats]\n'
-        for i in range(1, self.config.get_total_seat()+1):
+        for i in range(1, self.config['total_seats']+1):
             if str(i) in payload:
                 node = payload[str(i)]
                 ini += '%d = %s,%s\n' % (i, node['uid'], group_table[node['group_number']])

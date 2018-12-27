@@ -33,8 +33,7 @@ import logging
 import asyncio
 import serial_asyncio
 
-CURRENT_SCALE = 260
-VOLTAGE_SCALE = 112
+from pyaiot.gateway.manager.config import Config
 
 logger = logging.getLogger("pyaiot.gw.powernode")
 
@@ -71,15 +70,23 @@ class UartNode(asyncio.Protocol):
 class PowerNode():
     OVER_CURRENT_WARN = 1
     OVER_CURRENT_ERROR = 2
-    DEF_OVER_CURRENT_LEVEL = 9 * CURRENT_SCALE
 
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.transport = None
         self.protocol = None
         self.power_state = [0, 0, 0, 0, 0]
-        self.over_current_level = self.DEF_OVER_CURRENT_LEVEL
         self.lock = asyncio.Lock()
         self.version = ''
+
+        self.current_scale = self.config['current_scale']
+        self.voltage_scale = self.config['voltage_scale']
+        self.over_current = self.config['over_current']
+        self.warn_current = self.config['warn_current']
+        self.low_voltage = self.config['low_voltage']
+        self.normal_voltage = self.config['normal_voltage']
+        self.low_voltage_hold_time = self.config['low_voltage_hold_time']
+
         asyncio.ensure_future(self.coroutine_init())
 
     async def coroutine_init(self):
@@ -94,6 +101,7 @@ class PowerNode():
         async with self.lock:
             self.version = await self.protocol.command('version')
 
+        await self.set_over_current_level(int(self.over_current * self.current_scale))
 
     async def read_power(self):
         """Read ADC level (voltage, current, temp, humi)
@@ -197,51 +205,44 @@ class PowerNode():
 
         :param level: ADC level for current limit
         """
-        self.over_current_level = level
         async with self.lock:
-            cmd_line = 'over_current %d' % (self.over_current_level)
+            cmd_line = 'over_current %d' % (level)
             resp = await self.protocol.command(cmd_line)
             return resp
 
     def get_cached_power(self):
         return self.power_state
 
-    @staticmethod
-    def adc_to_volt(adc):
-        return float(adc) / VOLTAGE_SCALE
+    def adc_to_volt(self, adc):
+        return float(adc) / self.voltage_scale
 
-    @staticmethod
-    def adc_to_current(adc):
-        return float(adc) / CURRENT_SCALE
+    def adc_to_current(self, adc):
+        return float(adc) / self.current_scale
 
-    @staticmethod
-    def is_lower_voltage(adc):
-        return PowerNode.adc_to_volt(adc) < 21
+    def is_lower_voltage(self, adc):
+        return self.adc_to_volt(adc) < self.low_voltage
 
-    @staticmethod
-    def is_good_voltage(adc):
-        return PowerNode.adc_to_volt(adc) > 23
+    def is_good_voltage(self, adc):
+        return self.adc_to_volt(adc) > self.normal_voltage
 
-    @staticmethod
-    def over_current(adcs):
+    def check_over_current(self, adcs):
         def check(a):
-            if a > 9:
+            if a > self.over_current:
                 return PowerNode.OVER_CURRENT_ERROR
-            elif a > 8:
+            elif a > self.warn_current:
                 return PowerNode.OVER_CURRENT_WARN
             else:
                 return 0
 
-        currents = (PowerNode.adc_to_current(adc) for adc in adcs)
+        currents = (self.adc_to_current(adc) for adc in adcs)
 
-    @staticmethod
-    def over_current_final(adcs):
-        return (PowerNode.adc_to_current(adc) > 9 for adc in adcs)
+    def over_current_final(self, adcs):
+        return (PowerNode.adc_to_current(adc) > self.over_current for adc in adcs)
 
 
 if __name__ == '__main__':
     async def test():
-        node = PowerNode()
+        node = PowerNode(Config())
         await node.wait_initialized()
 
         while 1:

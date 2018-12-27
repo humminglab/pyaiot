@@ -9,6 +9,16 @@ ssid4 =
 psk4 =
 total_seats = 40
 bus_id = 191583fe-2638-4ce3-90b1-111111111111
+id = xxxx
+password = yyyy
+
+voltage_scale = 112
+current_scale = 260
+over_current = 9.0
+low_voltage = 21.
+normal_voltage = 23.0
+low_voltage_hold_time = 60
+
 
 [Seats]
 1 = 00a050326989,A
