@@ -55,6 +55,7 @@ class Config():
         self.low_voltage = self.config.getfloat(CONFIG, 'low_voltage', fallback=21.0)
         self.normal_voltage = self.config.getfloat(CONFIG, 'normal_voltage', fallback=23.0)
         self.low_voltage_hold_time = self.config.getint(CONFIG, 'low_voltage_hold_time', fallback=60)
+        self.server_base_uri = self.config.get(CONFIG, 'server_base_uri', fallback='https://www.busb.kr/api/v1/gw')
 
     def get_all_devices(self):
         """Get all device information"""

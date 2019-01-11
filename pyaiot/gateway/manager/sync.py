@@ -40,7 +40,7 @@ from pyroute2 import IPRoute
 from threading import Thread
 from tornado.httpclient import HTTPRequest, AsyncHTTPClient
 
-from pyaiot.gateway.manager.config import DEFAULT_CONFIG_FILENAME
+from pyaiot.gateway.manager.config import DEFAULT_CONFIG_FILENAME, Config
 from pyaiot.common.update import update_config, get_dev_firmware_version, upload_dev_firmware, run_encrypted_script
 from pyaiot.common.version import VERSION
 
@@ -49,8 +49,6 @@ logger.setLevel(logging.DEBUG)
 
 WLAN = 'wlan0'
 MIN_REPORT_INTERVAL_SECS = (10 * 60)
-
-BASE_URL = 'https://www.busb.kr/api/v1/gw'
 
 
 def pyroute_monitor(loop, sync):
@@ -76,6 +74,8 @@ class Sync():
         self.last_update_time = datetime.datetime(1900, 1, 1)
         loop = asyncio.get_event_loop()
         self.handle = loop.call_soon(self.trigger_upload)
+
+        self.base_uri = Config().server_base_uri
 
         self.up = False
 
@@ -110,7 +110,7 @@ class Sync():
 
         http_client = AsyncHTTPClient()
         req = HTTPRequest(
-            url='{}/{}/timestamp/{}/log/{}'.format(BASE_URL, bus_id, timestamp, report_name),
+            url='{}/{}/timestamp/{}/log/{}'.format(self.base_uri, bus_id, timestamp, report_name),
             method='POST',
             body=body)
         try:
@@ -187,7 +187,7 @@ class Sync():
         bus_id = self.config['bus_id']
         http_client = AsyncHTTPClient()
         req = HTTPRequest(
-            url='{}/{}/config/'.format(BASE_URL, bus_id),
+            url='{}/{}/config/'.format(self.base_uri, bus_id),
             method='GET')
         try:
             response = await http_client.fetch(req)
@@ -204,7 +204,7 @@ class Sync():
 
         http_client = AsyncHTTPClient()
         req = HTTPRequest(
-            url='{}/{}/dev_firmware/{}'.format(BASE_URL, bus_id, dev_version),
+            url='{}/{}/dev_firmware/{}'.format(self.base_uri, bus_id, dev_version),
             method='GET')
         try:
             response = await http_client.fetch(req)
@@ -220,7 +220,7 @@ class Sync():
 
         http_client = AsyncHTTPClient()
         req = HTTPRequest(
-            url='{}/{}/upgrade/{}'.format(BASE_URL, bus_id, VERSION),
+            url='{}/{}/upgrade/{}'.format(self.base_uri, bus_id, VERSION),
             method='GET')
         try:
             response = await http_client.fetch(req)
