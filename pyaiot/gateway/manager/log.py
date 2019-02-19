@@ -127,13 +127,13 @@ class Log():
 
     def get_old_sys_logs(self):
         """Get system log filenames except current one """
-        files = glob.glob(LOG_BASE + '/system-*.log')
+        files = sorted(glob.glob(LOG_BASE + '/system-*.log'))
         files = filter(lambda f: f != self.sys_log_name, files)
         return [{'name':f, 'stat':os.stat(f)} for f in sorted(files)]
 
     def get_old_port_logs(self):
         """Get port log filenames except current one"""
-        files = glob.glob(LOG_BASE + '/port-*.log')
+        files = sorted(glob.glob(LOG_BASE + '/port-*.log'))
         files = filter(lambda f: f != self.port_log_name, files)
         return [{'name':f, 'stat':os.stat(f)} for f in sorted(files)]
 
