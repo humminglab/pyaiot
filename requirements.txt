@@ -1,5 +1,3 @@
-setuptools
-wheel
 tornado>=5.0
 aiocoap>=0.3
 hbmqtt>=0.8
