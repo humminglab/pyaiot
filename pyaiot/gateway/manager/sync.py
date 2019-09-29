@@ -60,10 +60,10 @@ def pyroute_monitor(loop, sync):
             for msg in msgs:
                 if msg['event'] == 'RTM_NEWADDR' and msg.get_attr('IFA_LABEL') == WLAN:
                     logger.info('WiFi Connected: {}'.format(msg.get_attr('IFA_ADDRESS')))
-                    loop.call_soon_threadsafe(sync.on_wlan_event, True, msg.get_attr('IFA_ADDRESS'))
+                    loop.call_soon_threadsafe(sync.on_wlan_event)
                 elif msg['event'] == 'RTM_DELADDR' and msg.get_attr('IFA_LABEL') == WLAN:
                     logger.info('WiFi Disconnected')
-                    loop.call_soon_threadsafe(sync.on_wlan_event, False)
+                    loop.call_soon_threadsafe(sync.on_wlan_event)
 
 
 class Sync():
@@ -86,18 +86,22 @@ class Sync():
         self.thread = Thread(target=pyroute_monitor, args=(loop, self), daemon=True)
         self.thread.start()
 
-    def on_wlan_event(self, up, ip=None):
-        logs = dict(up=up)
-        if ip:
-            logs['ip'] = ip
-        self.logfile.write_port_log('wlan', json.dumps(logs))
+    def on_wlan_event(self):
+        addrs = netifaces.ifaddresses(WLAN)
+        up = True if netifaces.AF_INET in addrs else False
 
+        if self.up == up:
+            return
+
+        logs = dict(up=up)
         if up:
+            logs['ip'] = addrs[netifaces.AF_INET][0]['addr']
             loop = asyncio.get_event_loop()
             if self.handle:
                 self.handle.cancel()
                 self.handle = loop.call_soon(self.trigger_upload)
 
+        self.logfile.write_port_log('wlan', json.dumps(logs))
         self.up = up
         self.notify_event(connected=self.up, uploading=False)
 
