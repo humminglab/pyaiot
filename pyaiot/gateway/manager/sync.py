@@ -30,7 +30,6 @@
 """Sync with server"""
 
 import os
-import time
 import datetime
 import json
 import asyncio
@@ -50,26 +49,21 @@ logger.setLevel(logging.DEBUG)
 
 WLAN = 'wlan0'
 MIN_REPORT_INTERVAL_SECS = (10 * 60)
-RESCAN_INTERVAL = 15
 
-thread_run_flag = False
 
 def pyroute_monitor(loop, sync):
-    global thread_run_flag
-
     with IPRoute() as ipr:
         ipr.bind()
-        thread_run_flag = True
 
         while True:
             msgs = ipr.get()
             for msg in msgs:
                 if msg['event'] == 'RTM_NEWADDR' and msg.get_attr('IFA_LABEL') == WLAN:
                     logger.info('WiFi Connected: {}'.format(msg.get_attr('IFA_ADDRESS')))
-                    loop.call_soon_threadsafe(sync.on_wlan_event)
+                    loop.call_soon_threadsafe(sync.on_wlan_event, True, msg.get_attr('IFA_ADDRESS'))
                 elif msg['event'] == 'RTM_DELADDR' and msg.get_attr('IFA_LABEL') == WLAN:
                     logger.info('WiFi Disconnected')
-                    loop.call_soon_threadsafe(sync.on_wlan_event)
+                    loop.call_soon_threadsafe(sync.on_wlan_event, False)
 
 
 class Sync():
@@ -79,53 +73,32 @@ class Sync():
         self.notify_event = notify_event
         self.last_update_time = datetime.datetime(1900, 1, 1)
         loop = asyncio.get_event_loop()
+        self.handle = loop.call_soon(self.trigger_upload)
 
         self.base_uri = Config().server_base_uri
+
+        self.up = False
 
         self.finished_check_system_config = False
         self.finished_check_device_firmware = False
         self.finished_check_upgrade_script = False
 
-        self.handle = None
-        self.rescan_handle = loop.call_later(RESCAN_INTERVAL, self.rescan_force)
-        self.up = False
-
-        loop.call_later(3, self.on_wlan_event)
-
         self.thread = Thread(target=pyroute_monitor, args=(loop, self), daemon=True)
         self.thread.start()
 
-    def rescan_force(self):
-        loop = asyncio.get_event_loop()
-        self.rescan_handle = loop.call_later(RESCAN_INTERVAL, self.rescan_force)
-        subprocess.call(['nmcli', 'device', 'wifi', 'rescan', 'ssid', 'usbus'])
-
-    def on_wlan_event(self):
-        addrs = netifaces.ifaddresses(WLAN)
-        up = True if netifaces.AF_INET in addrs else False
-
-        if self.up == up:
-            return
-
-        loop = asyncio.get_event_loop()
-        self.up = up
+    def on_wlan_event(self, up, ip=None):
         logs = dict(up=up)
-        if up:
-            logs['ip'] = addrs[netifaces.AF_INET][0]['addr']
+        if ip:
+            logs['ip'] = ip
         self.logfile.write_port_log('wlan', json.dumps(logs))
 
-        if self.rescan_handle:
-            self.rescan_handle.cancel()
-            self.rescan_handle = None
-        if self.handle:
-            self.handle.cancel()
-            self.handle = None
-
         if up:
-            self.handle = loop.call_soon(self.trigger_upload)
-        else:
-            self.rescan_handle = loop.call_later(RESCAN_INTERVAL, self.rescan_force)
+            loop = asyncio.get_event_loop()
+            if self.handle:
+                self.handle.cancel()
+                self.handle = loop.call_soon(self.trigger_upload)
 
+        self.up = up
         self.notify_event(connected=self.up, uploading=False)
 
     async def upload_file(self, filename, report_name=None):
@@ -193,9 +166,12 @@ class Sync():
 
     def trigger_upload(self):
         loop = asyncio.get_event_loop()
-        if self.handle:
-            self.handle.cancel()
         self.handle = loop.call_later(MIN_REPORT_INTERVAL_SECS, self.trigger_upload)
+
+        addrs = netifaces.ifaddresses(WLAN)
+        if not netifaces.AF_INET in addrs:
+            logger.info('Upload cancel: WiFi Disconnected')
+            return
 
         if not self.config['bus_id']:
             return
