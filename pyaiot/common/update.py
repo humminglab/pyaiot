@@ -134,7 +134,6 @@ def update_network_manager(config):
 
             if len(config[psk]) > 0:
                 subprocess.call(['nmcli', 'connection', 'modify', config[ssid],
-                                 'ipv4.route-metric', '50', 'ipv6.route-metric', '50',
                                  'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', config[psk]])
 
 
