@@ -49,6 +49,7 @@ logger = logging.getLogger("pyaiot.manager.sync")
 logger.setLevel(logging.DEBUG)
 
 WLAN = 'wlan0'
+ETH = 'eth0'
 MIN_REPORT_INTERVAL_SECS = (10 * 60)
 
 
@@ -97,10 +98,6 @@ class Sync():
         logs = dict(up=up)
         if up:
             logs['ip'] = addrs[netifaces.AF_INET][0]['addr']
-            loop = asyncio.get_event_loop()
-            if self.handle:
-                self.handle.cancel()
-                self.handle = loop.call_soon(self.trigger_upload)
 
         self.logfile.write_port_log('wlan', json.dumps(logs))
         self.up = up
@@ -175,9 +172,9 @@ class Sync():
         loop = asyncio.get_event_loop()
         self.handle = loop.call_later(MIN_REPORT_INTERVAL_SECS, self.trigger_upload)
 
-        addrs = netifaces.ifaddresses(WLAN)
+        addrs = netifaces.ifaddresses(ETH)
         if not netifaces.AF_INET in addrs:
-            logger.info('Upload cancel: WiFi Disconnected')
+            logger.info('Upload cancel: Eth Disconnected')
             return
 
         if not self.config['bus_id']:
