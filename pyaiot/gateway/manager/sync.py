@@ -74,16 +74,14 @@ class Sync():
         self.config = config
         self.notify_event = notify_event
         self.last_update_time = datetime.datetime(1900, 1, 1)
+        self.try_upgrade = True
+
         loop = asyncio.get_event_loop()
         self.handle = loop.call_soon(self.trigger_upload)
 
         self.base_uri = Config().server_base_uri
 
         self.up = False
-
-        self.finished_check_system_config = False
-        self.finished_check_device_firmware = False
-        self.finished_check_upgrade_script = False
 
         self.thread = Thread(target=pyroute_monitor, args=(loop, self), daemon=True)
         self.thread.start()
@@ -126,39 +124,29 @@ class Sync():
             logging.info('Upload OK - %s' % os.path.basename(filename))
 
     async def upload_files(self, file_infos):
+        skip_upgrade = False
         now = datetime.datetime.now()
         now_str = now.strftime('%Y%m%d-%H%M%S')
 
         self.notify_event(connected=self.up, uploading=True)
         try:
-            await self.upload_file(DEFAULT_CONFIG_FILENAME, 'config-{}.ini'.format(now_str))
             for finfo in file_infos:
                 await self.upload_file(finfo['name'])
                 os.unlink(finfo['name'])
         except:
+            skip_upgrade = True
             pass
 
         # check upgrade
-        if not self.finished_check_system_config:
+        if not skip_upgrade and self.try_upgrade:
             try:
+                await self.upload_file(DEFAULT_CONFIG_FILENAME, 'config-{}.ini'.format(now_str))
                 await self.download_system_config()
-                self.finished_check_system_config = True
-            except:
-                pass
-
-        if not self.finished_check_device_firmware:
-            try:
                 await self.download_device_firmware()
-                self.finished_check_device_firmware = True
-            except:
-                pass
-
-        if not self.finished_check_upgrade_script:
-            try:
                 await self.download_run_upgrade_script()
-                self.finished_check_upgrade_script = True
             except:
                 pass
+            self.try_upgrade = False
 
         self.notify_event(connected=self.up, uploading=False)
 
