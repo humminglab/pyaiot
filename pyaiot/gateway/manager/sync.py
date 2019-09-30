@@ -28,7 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 """Sync with server"""
-
+import gzip
 import os
 import datetime
 import json
@@ -39,6 +39,7 @@ import subprocess
 from pyroute2 import IPRoute
 from threading import Thread
 from tornado.httpclient import HTTPRequest, AsyncHTTPClient
+from tornado.httputil import HTTPHeaders
 
 from pyaiot.gateway.manager.config import DEFAULT_CONFIG_FILENAME, Config
 from pyaiot.common.update import update_config, get_dev_firmware_version, upload_dev_firmware, run_encrypted_script
@@ -110,12 +111,14 @@ class Sync():
         bus_id = self.config['bus_id']
         timestamp = int(datetime.datetime.now().timestamp())
         with open(filename) as f:
-            body = f.read()
+            body = gzip.compress(f.read().encode('utf-8'))
 
         http_client = AsyncHTTPClient()
+        headers = HTTPHeaders({"Content-Encoding": "gzip"})
         req = HTTPRequest(
             url='{}/{}/timestamp/{}/log/{}'.format(self.base_uri, bus_id, timestamp, report_name),
             method='POST',
+            headers=headers,
             body=body)
         try:
             response = await http_client.fetch(req)
