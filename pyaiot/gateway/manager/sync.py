@@ -171,9 +171,8 @@ class Sync():
         now = datetime.datetime.now()
         delta = now - self.last_update_time
 
-        if delta.total_seconds() > MIN_REPORT_INTERVAL_SECS:
-            self.gather_and_upload()
-            self.last_update_time = datetime.datetime.now()
+        self.gather_and_upload()
+        self.last_update_time = datetime.datetime.now()
 
     async def download_system_config(self):
         bus_id = self.config['bus_id']
