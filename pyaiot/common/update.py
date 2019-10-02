@@ -114,7 +114,7 @@ def update_config(data):
 
 
 def update_network_manager(config):
-    """Remove all wifi config and add new wifi configuration"""
+    """Disable WiFi Network"""
 
     # remove all wifi config
     r = subprocess.check_output(['nmcli', 'connection', 'show'])
@@ -124,17 +124,7 @@ def update_network_manager(config):
         if len(field) >= 4 and field[-2] == 'wifi':
             subprocess.call(['nmcli', 'connection', 'delete', field[-3]])
 
-    for i in range(1, 5):
-        ssid = '{}{}'.format(SSID, i)
-        psk = '{}{}'.format(PSK, i)
-
-        if ssid in config and psk in config and len(config[ssid]) > 0:
-            subprocess.call(['nmcli', 'connection', 'add', 'type', 'wifi', 'con-name',
-                             config[ssid], 'ifname', 'wlan0', 'ssid', config[ssid]])
-
-            if len(config[psk]) > 0:
-                subprocess.call(['nmcli', 'connection', 'modify', config[ssid],
-                                 'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', config[psk]])
+    subprocess.call(['nmcli', 'radio', 'wifi', 'off'])
 
 
 def upload_dev_firmware(filename, enc_data):
